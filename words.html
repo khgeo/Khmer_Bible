@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ប្រេកង់ពាក្យ — Khmer Bible Word Frequency</title>
+<meta name="description" content="Search any Khmer word and compare how often it appears in the Old and New Testament of the Khmer Old Version 1954 (ពគប).">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;600&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="words.css">
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>ប្រេកង់ពាក្យក្នុងព្រះគម្ពីរ</h1>
+    <p>Word frequency · សញ្ញាចាស់ ↔ សញ្ញាថ្មី · ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)</p>
+    <nav><a href="./">ធ្នូសម្ពន្ធ · Arcs</a><a class="on" href="words.html">ប្រេកង់ពាក្យ · Word frequency</a></nav>
+  </div>
+  <div id="status"><span class="dot"></span><span id="statusText">កំពុងភ្ជាប់ទៅអត្ថបទ ពគប…</span></div>
+</header>
+
+<section class="wsearch">
+  <form id="wform" autocomplete="off">
+    <input id="w" type="search" placeholder="វាយពាក្យ៖ អត់ទោស" aria-label="Khmer word">
+    <button type="submit">ស្វែងរក</button>
+  </form>
+  <div class="opts">
+    <label><input type="radio" name="mode" value="word" checked> ពាក្យពេញ <small>exact word</small></label>
+    <label><input type="radio" name="mode" value="part"> មានផ្ទុក <small>contains</small></label>
+    <span class="muted hint">ពាក្យច្រើន៖ បំបែកដោយក្បៀស — <i>អត់ទោស, អភ័យទោស</i></span>
+  </div>
+  <div id="chips"></div>
+</section>
+
+<section id="summary" class="summary"></section>
+
+<section class="grids">
+  <div class="tpanel ot"><div class="thead"><span>គម្ពីរសញ្ញាចាស់ · OLD TESTAMENT</span><b id="otPct"></b></div><canvas id="otc"></canvas></div>
+  <div class="tpanel nt"><div class="thead"><span>គម្ពីរសញ្ញាថ្មី · NEW TESTAMENT</span><b id="ntPct"></b></div><canvas id="ntc"></canvas>
+    <div class="bookchart"><h3>តាមសៀវភៅ <small>% នៃខ · % of verses</small></h3><div id="books"></div></div>
+  </div>
+  <div id="wtip" hidden></div>
+</section>
+
+<section class="hits">
+  <h3 id="hitsTitle"></h3>
+  <div id="hitlist"></div>
+</section>
+
+<footer>
+  អត្ថបទ ពគប ផ្ទុកផ្ទាល់ពី <a href="https://github.com/Beblia/Holy-Bible-XML-Format" target="_blank" rel="noopener">Beblia</a> ·
+  ការរចនាបំផុសពី <a href="http://www.pitchinteractive.com/bibleQuran/" target="_blank" rel="noopener">Pitch Interactive</a> ·
+  <a href="https://github.com/khgeo" target="_blank" rel="noopener">YAM Sarath</a>
+</footer>
+<script src="common.js"></script>
+<script src="words.js"></script>
+</body>
+</html>
