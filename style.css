@@ -1,4 +1,9 @@
-:root,:root[data-theme="dark"]{
+:root{
+  --km:"Kantumruy Pro","Battambang",system-ui,sans-serif;
+  --verse:"Battambang","Kantumruy Pro",serif;
+}
+/* light is the default theme */
+:root[data-theme="dark"]{
   --bg:#050507; --panel:#0e0f14; --line:#22242d; --text:#e8e6df; --muted:#8d8b84;
   --accent:#e7c86a; --link:#9fd3ff;
   --tip:rgba(14,15,20,.96); --hover:#14161d; --vtext:#d8d5cc; --vsel:#1c1a10;
@@ -7,11 +12,9 @@
   --cv-blend:lighter; --cv-alpha:1; --cv-dark:1; --cv-axis:#3b6fd6; --cv-bar1:#d8d8d8; --cv-bar2:#8a8a8a;
   --cv-label:#8d8b84; --cv-hover:rgba(255,255,255,.55); --cv-sel:rgba(231,200,106,.55);
   --hit-ot:#ffe28a; --hit-nt:#ffb08f; --ot-bg:#1b170b; --nt-bg:#1d0f0a;
-  --km:"Kantumruy Pro","Battambang",system-ui,sans-serif;
-  --verse:"Battambang","Kantumruy Pro",serif;
   color-scheme:dark;
 }
-:root[data-theme="light"]{
+:root,:root[data-theme="light"]{
   --bg:#ffffff; --panel:#f4f5f7; --line:#dfe1e6; --text:#1b1d22; --muted:#6b6f78;
   --accent:#a8801a; --link:#1b5fb8;
   --tip:rgba(255,255,255,.98); --hover:#f1f3f6; --vtext:#2b2d33; --vsel:#fff3cf;

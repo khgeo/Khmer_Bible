@@ -7,7 +7,7 @@ const kmNum = n => String(n).replace(/\d/g, d => KD[d]);
 const toAscii = s => s.replace(/[០-៩]/g, d => KD.indexOf(d));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // ---------- page colour themes (dark / light / paper), remembered per browser ----------
-const THEMES = [['dark', 'ងងឹត', '#050507'], ['light', 'ភ្លឺ', '#ffffff'], ['paper', 'ក្រដាស', '#f3ecdc']];
+const THEMES = [['light', 'ភ្លឺ', '#ffffff'], ['paper', 'ក្រដាស', '#f3ecdc'], ['dark', 'ងងឹត', '#050507']];
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function setTheme(t) {
   document.documentElement.dataset.theme = t;
@@ -17,7 +17,7 @@ function setTheme(t) {
 }
 function mountThemeSwitch() {
   const host = document.querySelector('.hdr-right'); if (!host) return;
-  const cur = document.documentElement.dataset.theme || 'dark';
+  const cur = document.documentElement.dataset.theme || 'light';
   const div = document.createElement('div'); div.className = 'theme'; div.setAttribute('role', 'group'); div.setAttribute('aria-label', 'ពណ៌ទំព័រ · Page colour');
   div.innerHTML = THEMES.map(([k, l, sw]) => `<button type="button" data-t="${k}" class="${k === cur ? 'on' : ''}" title="${k}"><i style="background:${sw}"></i>${l}</button>`).join('');
   div.onclick = e => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.t); };

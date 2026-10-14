@@ -14,7 +14,7 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Search** in Khmer or English: `យ៉ូហាន ៣:១៦`, `John 3:16`, `រ៉ូម ៨`, `Gen 1`.
 - Filters: minimum votes, one book only, Old ↔ New Testament links only.
 - Deep links: `…/#John.3.16`, `…/#Ps.23`.
-- **Page colour** switch in the header — ងងឹត (dark), ភ្លឺ (light), ក្រដាស (paper). The choice is remembered and shared by both pages.
+- **Page colour** switch in the header — ភ្លឺ (light, default), ក្រដាស (paper), ងងឹត (dark). The choice is remembered and shared by both pages.
 
 ## Word frequency page (`words.html`)
 Inspired by Pitch Interactive's Bible/Quran word comparison. Type any Khmer word and see where it appears:
