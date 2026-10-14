@@ -6,6 +6,25 @@ const KD = '០១២៣៤៥៦៧៨៩';
 const kmNum = n => String(n).replace(/\d/g, d => KD[d]);
 const toAscii = s => s.replace(/[០-៩]/g, d => KD.indexOf(d));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// ---------- page colour themes (dark / light / paper), remembered per browser ----------
+const THEMES = [['dark', 'ងងឹត', '#050507'], ['light', 'ភ្លឺ', '#ffffff'], ['paper', 'ក្រដាស', '#f3ecdc']];
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('kb-theme', t); } catch (e) {}
+  document.querySelectorAll('.theme button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  window.dispatchEvent(new Event('themechange'));
+}
+function mountThemeSwitch() {
+  const host = document.querySelector('.hdr-right'); if (!host) return;
+  const cur = document.documentElement.dataset.theme || 'dark';
+  const div = document.createElement('div'); div.className = 'theme'; div.setAttribute('role', 'group'); div.setAttribute('aria-label', 'ពណ៌ទំព័រ · Page colour');
+  div.innerHTML = THEMES.map(([k, l, sw]) => `<button type="button" data-t="${k}" class="${k === cur ? 'on' : ''}" title="${k}"><i style="background:${sw}"></i>${l}</button>`).join('');
+  div.onclick = e => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.t); };
+  host.prepend(div);
+}
+document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mountThemeSwitch) : mountThemeSwitch();
+
 function setStatus(cls, msg) { const s = $('#status'); if (!s) return; s.className = cls; $('#statusText').textContent = msg; }
 
 const KhmerText = (() => {

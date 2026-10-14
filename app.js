@@ -45,6 +45,7 @@ let G = {};                                           // geometry
   bindUI();
   layout();
   window.addEventListener('resize', debounce(layout, 150));
+  window.addEventListener('themechange', () => { drawBase(); drawOverlay(); });
   loadText();
   route();
   window.addEventListener('hashchange', route);
@@ -101,31 +102,32 @@ function drawBase() {
     p.moveTo(xa, axisY); p.arc(xa + r, axisY, r, Math.PI, 2 * Math.PI);
   }
   // alpha scales down when many arcs are visible
-  const k = clamp(Math.sqrt(9000 / Math.max(shown, 1)), 0.25, 2.2);
-  ctx.globalCompositeOperation = 'lighter';
+  const k = clamp(Math.sqrt(9000 / Math.max(shown, 1)), 0.25, 2.2) * (+cssVar('--cv-alpha') || 1);
+  const dark = +cssVar('--cv-dark') || 1;   // light themes darken the ramp so arcs keep contrast
+  ctx.globalCompositeOperation = cssVar('--cv-blend') || 'lighter';
   ctx.lineWidth = 0.6;
   paths.forEach((p, i) => {
-    const cb = Math.floor(i / NS), s = i % NS, [r, g, b] = ramp((cb + 0.5) / NCB);
-    const t = (cb + 0.5) / NCB, dense = 0.3 + 0.7 * Math.sqrt(t); // short arcs pile up, so dim them
+    const cb = Math.floor(i / NS), s = i % NS, [r, g, b] = ramp((cb + 0.5) / NCB).map(v => Math.round(v * dark));
+    const t = (cb + 0.5) / NCB; const dense = 0.3 + 0.7 * Math.sqrt(t); // short arcs pile up, so dim them
     ctx.strokeStyle = `rgba(${r},${g},${b},${clamp([0.045, 0.1, 0.2][s] * k * dense, 0.012, 0.85)})`;
     ctx.stroke(p);
   });
   ctx.globalCompositeOperation = 'source-over';
   // axis line + verse-count bars, alternating grey per book (as in Harrison's chart)
-  ctx.fillStyle = '#3b6fd6'; ctx.fillRect(G.pad, axisY, G.W - 2 * G.pad, 1.5);
+  ctx.fillStyle = cssVar('--cv-axis'); ctx.fillRect(G.pad, axisY, G.W - 2 * G.pad, 1.5);
   const maxV = 176;
   for (let c = 0; c < NC; c++) {
     const n = chFirstVerse[c + 1] - chFirstVerse[c], h = Math.max(1, n / maxV * G.barH);
     const bi = chBook[c], hi = S.book === bi;
-    ctx.fillStyle = hi ? '#e7c86a' : (bi % 2 ? '#8a8a8a' : '#d8d8d8');
+    ctx.fillStyle = hi ? cssVar('--accent') : (bi % 2 ? cssVar('--cv-bar2') : cssVar('--cv-bar1'));
     ctx.fillRect(G.pad + c * G.cw, axisY + 3, Math.max(G.cw - 0.15, 0.5), h);
   }
   // testament labels
-  ctx.fillStyle = '#8d8b84'; ctx.font = '12px "Kantumruy Pro", sans-serif'; ctx.textBaseline = 'top';
+  ctx.fillStyle = cssVar('--cv-label'); ctx.font = '12px "Kantumruy Pro", sans-serif'; ctx.textBaseline = 'top';
   const ly = axisY + 6 + G.barH;
   ctx.textAlign = 'left'; ctx.fillText('គម្ពីរសញ្ញាចាស់ · Old Testament', G.pad, ly);
   ctx.textAlign = 'right'; ctx.fillText('New Testament · គម្ពីរសញ្ញាថ្មី', G.W - G.pad, ly);
-  ctx.fillStyle = '#3b6fd6'; ctx.fillRect(chX(OT_CH) - G.cw / 2, axisY + 3, 1, G.barH + 18);
+  ctx.fillStyle = cssVar('--cv-axis'); ctx.fillRect(chX(OT_CH) - G.cw / 2, axisY + 3, 1, G.barH + 18);
   $('#stats').textContent = `${kmNum(shown.toLocaleString('en'))} ធ្នូ / ${kmNum(LINKS.length.toLocaleString('en'))}`;
 }
 
@@ -142,9 +144,9 @@ function drawOverlay() {
   };
   if (S.sel >= 0) {
     if (S.selVerse >= 0 && XREF.has(META.books[chBook[S.sel]].osis)) drawVerseArcs(ctx);
-    else strokeChapter(S.sel, 'rgba(231,200,106,.55)', 0.9);
+    else strokeChapter(S.sel, cssVar('--cv-sel'), 0.9);
   }
-  if (S.hover >= 0 && S.hover !== S.sel) strokeChapter(S.hover, 'rgba(255,255,255,.55)', 0.8);
+  if (S.hover >= 0 && S.hover !== S.sel) strokeChapter(S.hover, cssVar('--cv-hover'), 0.8);
 }
 
 function drawVerseArcs(ctx) {
@@ -153,11 +155,11 @@ function drawVerseArcs(ctx) {
   for (let i = 0; i < arr.length; i += 4) {
     if (arr[i] !== S.selVerse) continue;
     const xa = verseX(arr[i]), xb = verseX(arr[i + 1]), lo = Math.min(xa, xb), r = Math.abs(xb - xa) / 2;
-    const [cr, cg, cb] = ramp(Math.abs(verseCh[arr[i + 1]] - verseCh[arr[i]]) / NC);
+    const [cr, cg, cb] = ramp(Math.abs(verseCh[arr[i + 1]] - verseCh[arr[i]]) / NC).map(v => Math.round(v * (+cssVar('--cv-dark') || 1)));
     ctx.strokeStyle = `rgba(${cr},${cg},${cb},${clamp(0.35 + arr[i + 3] / 80, .35, 1)})`;
     ctx.beginPath(); ctx.moveTo(lo, axisY); ctx.arc(lo + r, axisY, Math.max(r, 1), Math.PI, 2 * Math.PI); ctx.stroke();
   }
-  ctx.fillStyle = '#e7c86a'; ctx.beginPath(); ctx.arc(verseX(S.selVerse), axisY, 3.5, 0, 7); ctx.fill();
+  ctx.fillStyle = cssVar('--accent'); ctx.beginPath(); ctx.arc(verseX(S.selVerse), axisY, 3.5, 0, 7); ctx.fill();
 }
 
 // ---------- interaction ----------

@@ -27,6 +27,7 @@ let G = {}, R = { hits: new Map(), q: '', mode: 'word', regs: [] }, shown = MAXL
   $('#wform').onsubmit = e => { e.preventDefault(); submit(); };
   document.querySelectorAll('[name=mode]').forEach(r => r.onchange = submit);
   window.addEventListener('resize', debounce(layout, 150));
+  window.addEventListener('themechange', draw);
   window.addEventListener('hashchange', fromHash);
   bindHover();
   layout();
@@ -129,7 +130,7 @@ function draw() {
     }
     // hits: bright blocks, at least 3px so single verses stay visible
     const hw = Math.max(cw, 3), hh = Math.max(rh * 2.4, 3);
-    ctx.fillStyle = id === '#otc' ? '#ffe28a' : '#ffb08f';
+    ctx.fillStyle = cssVar(id === '#otc' ? '--hit-ot' : '--hit-nt');
     for (const g of R.hits.keys()) if (g >= from && g < to) {
       const x = pad + (vNum[g] - 1) * cw, y = pad + chRow[g] * rh;
       ctx.fillRect(x - (hw - cw) / 2, y - (hh - rh) / 2, hw, hh);
