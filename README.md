@@ -28,7 +28,7 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - 352 places carry their **Khmer ពគប name**, matched against the text (verified list in `scripts/km_place_names.json` plus automatic matching).
 - Pick a book to see its places, or a chapter to see them **numbered in the order the text mentions them, joined by a route** — try `maps.html#Acts.27` (Paul's voyage to Rome) or `#Exod.14`.
 - **▶ Play** steps through all 66 books on the map.
-- Click a place for every verse that mentions it, in Khmer with the name highlighted. Base maps: map (follows the page theme), satellite, terrain.
+- Click a place for every verse that mentions it, in Khmer with the name highlighted. Base maps, all keyless: map (Esri grey canvas, follows the page theme), OpenStreetMap streets, satellite, terrain.
 
 ## Word frequency page (`words.html`)
 Inspired by Pitch Interactive's Bible/Quran word comparison. Type any Khmer word and see where it appears:
@@ -75,6 +75,6 @@ The XML is used only for chapter/verse structure. References with zero or negati
 
 ## Credits & licences
 - Cross-references: [OpenBible.info](https://www.openbible.info/labs/cross-references/), **CC-BY**.
-- Places: [OpenBible.info Bible Geocoding Data](https://github.com/openbibleinfo/Bible-Geocoding-Data), **CC-BY 4.0**. Base maps © OpenStreetMap contributors, CARTO, Esri.
+- Places: [OpenBible.info Bible Geocoding Data](https://github.com/openbibleinfo/Bible-Geocoding-Data), **CC-BY 4.0**. Base maps (no API key needed): Esri Light/Dark Gray Canvas, World Imagery and Shaded Relief; © OpenStreetMap contributors.
 - Khmer text: ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប), Bible Society in Cambodia. The Beblia file marks it © BFBS/UBS 1954, 1962 — the text is loaded from that third-party source, not redistributed here. For a public or institutional deployment, check permission with the Bible Society in Cambodia.
 - Code: MIT — YAM Sarath ([@khgeo](https://github.com/khgeo)).

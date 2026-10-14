@@ -23,7 +23,7 @@ let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
   setFs(fs);
   window.addEventListener('hashchange', route);
   window.addEventListener('scroll', throttle(saveScroll, 400), { passive: true });
-  window.addEventListener('themechange', () => { if (mini) { mini.eachLayer(l => l instanceof L.TileLayer && mini.removeLayer(l)); Places.baseLayers().themed().addTo(mini); renderMini(); } });
+  window.addEventListener('themechange', () => { if (mini) { mini.removeLayer(mini._base); mini._base = Places.baseLayers(mini).themed().addTo(mini); renderMini(); } });
   // a chapter counts as read once its end has been on screen and it has been open for a few seconds
   let endTimer = 0;
   new IntersectionObserver(es => es.forEach(e => {
@@ -136,7 +136,7 @@ function renderPlaces(pls) {
   $('#bigmap').href = 'maps.html#' + B.ref(S.c, -1);
   if (!mini) {
     mini = L.map('minimap', { zoomControl: false, attributionControl: true, scrollWheelZoom: false, preferCanvas: true });
-    Places.baseLayers().themed().addTo(mini);
+    mini._base = Places.baseLayers(mini).themed().addTo(mini);
     miniLayer = L.layerGroup().addTo(mini);
   }
   renderMini(pls);

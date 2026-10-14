@@ -26,9 +26,10 @@ const MAXV = 60;
 // ---------- map ----------
 function buildMap() {
   map = L.map('map', { zoomControl: true, preferCanvas: true, worldCopyJump: true }).setView([31.6, 35.4], innerWidth < 700 ? 6 : 7);
-  const bl = Places.baseLayers();
+  const bl = Places.baseLayers(map);
   baseThemed = bl.themed().addTo(map);
-  baseCtl = L.control.layers({ 'ផែនទី · Map': baseThemed, 'ផ្កាយរណប · Satellite': bl['ផ្កាយរណប · Satellite'], 'ភូមិសាស្ត្រ · Terrain': bl['ភូមិសាស្ត្រ · Terrain'] }, null, { position: 'topright' }).addTo(map);
+  baseCtl = L.control.layers({ 'ផែនទី · Map': baseThemed, 'ផែនទីផ្លូវ · Streets': bl['ផែនទីផ្លូវ · Streets'],
+    'ផ្កាយរណប · Satellite': bl['ផ្កាយរណប · Satellite'], 'ភូមិសាស្ត្រ · Terrain': bl['ភូមិសាស្ត្រ · Terrain'] }, null, { position: 'topright' }).addTo(map);
   L.control.scale({ imperial: false }).addTo(map);
   layer = L.layerGroup().addTo(map);
   routeLayer = L.layerGroup().addTo(map);
@@ -37,9 +38,9 @@ function buildMap() {
 function swapThemedBase() {
   const on = map.hasLayer(baseThemed);
   baseCtl.removeLayer(baseThemed); if (on) map.removeLayer(baseThemed);
-  baseThemed = Places.baseLayers().themed();
+  baseThemed = Places.baseLayers(map).themed();
   baseCtl.addBaseLayer(baseThemed, 'ផែនទី · Map');
-  if (on) baseThemed.addTo(map).bringToBack();
+  if (on) baseThemed.addTo(map);
   draw();
 }
 function legend() {

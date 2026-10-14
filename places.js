@@ -42,18 +42,26 @@ const Places = (() => {
     const t = esc(text || '');
     return pl && pl.re ? t.replace(pl.re, m => `<mark>${m}</mark>`) : t;
   }
-  // base maps that follow the page theme; satellite + terrain for the curious
-  function baseLayers() {
-    const dark = () => (document.documentElement.dataset.theme === 'dark');
-    const carto = s => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${s}/{z}/{x}/{y}{r}.png`, {
-      subdomains: 'abcd', maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' });
+  // Base maps — all keyless (no API key needed on GitHub Pages).
+  // "Map" follows the page theme: Esri light/dark grey canvas with a place-name overlay.
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  const esri = (svc, opt = {}) => L.tileLayer(ESRI + svc + '/MapServer/tile/{z}/{y}/{x}', Object.assign({ maxZoom: 16, attribution: 'Tiles © <a href="https://www.esri.com/">Esri</a>' }, opt));
+  function labelsPane(map) {
+    if (!map.getPane('labels')) { const p = map.createPane('labels'); p.style.zIndex = 350; p.style.pointerEvents = 'none'; }
+    return 'labels';
+  }
+  function baseLayers(map) {
+    const pane = labelsPane(map);
+    const dark = () => document.documentElement.dataset.theme === 'dark';
     return {
-      themed: () => carto(dark() ? 'dark_all' : 'light_all'),
-      'ផែនទី · Map': null,
-      'ផ្កាយរណប · Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
-      'ភូមិសាស្ត្រ · Terrain': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 13, attribution: 'Relief © Esri' }),
+      themed: () => dark()
+        ? L.layerGroup([esri('Canvas/World_Dark_Gray_Base'), esri('Canvas/World_Dark_Gray_Reference', { pane })])
+        : L.layerGroup([esri('Canvas/World_Light_Gray_Base'), esri('Canvas/World_Light_Gray_Reference', { pane })]),
+      'ផែនទីផ្លូវ · Streets': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }),
+      'ផ្កាយរណប · Satellite': L.layerGroup([esri('World_Imagery', { maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }),
+        esri('Reference/World_Boundaries_and_Places', { pane })]),
+      'ភូមិសាស្ត្រ · Terrain': L.layerGroup([esri('World_Shaded_Relief', { maxZoom: 13 }), esri('Canvas/World_Light_Gray_Reference', { pane, maxZoom: 13 })]),
     };
   }
   return { load, highlight, baseLayers };
