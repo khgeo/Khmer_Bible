@@ -44,6 +44,7 @@ let G = {};                                           // geometry
   META.books.forEach((b, i) => sel.add(new Option(`${b.km} · ${b.en}`, i)));
   bindUI();
   layout();
+  renderVotd();
   window.addEventListener('resize', debounce(layout, 150));
   window.addEventListener('themechange', () => { drawBase(); drawOverlay(); });
   loadText();
@@ -54,10 +55,17 @@ let G = {};                                           // geometry
 function debounce(f, ms) { let t; return () => { clearTimeout(t); t = setTimeout(f, ms); }; }
 
 // ---------- live Khmer text ----------
+function renderVotd() {
+  const el = document.getElementById('votd'); if (!el) return;
+  const m = votdRef().split('.'), bi = META.books.findIndex(b => b.osis === m[0]);
+  const c = bookFirstCh[bi] + +m[1] - 1, g = chFirstVerse[c] + +m[2] - 1;
+  el.innerHTML = `<div class="votd"><div class="k">ខគម្ពីរប្រចាំថ្ងៃ · VERSE OF THE DAY</div><p>${TEXT ? esc(TEXT[g]) : '…'}</p>
+    <div class="acts"><a href="#${votdRef()}">${esc(refLabel(g))} — មើលធ្នូ ›</a><a href="read.html#${votdRef()}">អាន ›</a></div></div>`;
+}
 function loadText() {
   KhmerText.load(META, setStatus).then(t => {
     TEXT = t;
-    if (S.sel >= 0) renderPanel();
+    if (S.sel >= 0) renderPanel(); else renderVotd();
   }).catch(() => {});
 }
 
@@ -85,6 +93,7 @@ function visible(l) {
   return true;
 }
 
+drawBase.token = 0;
 function drawBase() {
   const ctx = $('#arcs').getContext('2d'), { dpr, axisY } = G;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -104,15 +113,6 @@ function drawBase() {
   // alpha scales down when many arcs are visible
   const k = clamp(Math.sqrt(9000 / Math.max(shown, 1)), 0.25, 2.2) * (+cssVar('--cv-alpha') || 1);
   const dark = +cssVar('--cv-dark') || 1;   // light themes darken the ramp so arcs keep contrast
-  ctx.globalCompositeOperation = cssVar('--cv-blend') || 'lighter';
-  ctx.lineWidth = 0.6;
-  paths.forEach((p, i) => {
-    const cb = Math.floor(i / NS), s = i % NS, [r, g, b] = ramp((cb + 0.5) / NCB).map(v => Math.round(v * dark));
-    const t = (cb + 0.5) / NCB; const dense = 0.3 + 0.7 * Math.sqrt(t); // short arcs pile up, so dim them
-    ctx.strokeStyle = `rgba(${r},${g},${b},${clamp([0.045, 0.1, 0.2][s] * k * dense, 0.012, 0.85)})`;
-    ctx.stroke(p);
-  });
-  ctx.globalCompositeOperation = 'source-over';
   // axis line + verse-count bars, alternating grey per book (as in Harrison's chart)
   ctx.fillStyle = cssVar('--cv-axis'); ctx.fillRect(G.pad, axisY, G.W - 2 * G.pad, 1.5);
   const maxV = 176;
@@ -128,6 +128,31 @@ function drawBase() {
   ctx.textAlign = 'left'; ctx.fillText('គម្ពីរសញ្ញាចាស់ · Old Testament', G.pad, ly);
   ctx.textAlign = 'right'; ctx.fillText('New Testament · គម្ពីរសញ្ញាថ្មី', G.W - G.pad, ly);
   ctx.fillStyle = cssVar('--cv-axis'); ctx.fillRect(chX(OT_CH) - G.cw / 2, axisY + 3, 1, G.barH + 18);
+  const blend = cssVar('--cv-blend') || 'lighter';
+  ctx.lineWidth = 0.6;
+  const strokeOne = i => {
+    const p = paths[i], cb = Math.floor(i / NS), s = i % NS, [r, g, b] = ramp((cb + 0.5) / NCB).map(v => Math.round(v * dark));
+    const t = (cb + 0.5) / NCB; const dense = 0.3 + 0.7 * Math.sqrt(t); // short arcs pile up, so dim them
+    ctx.globalCompositeOperation = blend;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${clamp([0.045, 0.1, 0.2][s] * k * dense, 0.012, 0.85)})`;
+    ctx.stroke(p);
+    ctx.globalCompositeOperation = 'source-over';
+  };
+  // first visit: the rainbow rises from short arcs to the longest ones
+  const token = ++drawBase.token;
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (drawBase.animated || calm) paths.forEach((_, i) => strokeOne(i));
+  else {
+    drawBase.animated = true;
+    const t0 = performance.now(), DUR = 1600; let done = 0;
+    const frame = now => {
+      if (token !== drawBase.token) return;
+      const upto = Math.min(paths.length, Math.ceil(paths.length * Math.pow(Math.min(1, (now - t0) / DUR), 0.8)));
+      while (done < upto) strokeOne(done++);
+      if (done < paths.length) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
   $('#stats').textContent = `${kmNum(shown.toLocaleString('en'))} ធ្នូ / ${kmNum(LINKS.length.toLocaleString('en'))}`;
 }
 
@@ -266,7 +291,7 @@ function renderPanel() {
     <div class="muted" style="font-size:12.5px">${esc(b.en)} ${chNum[c]} · ${kmNum(v1 - v0)} ខ · ${kmNum(total)} សម្ពន្ធ</div>
     <div class="tabs"><button data-tab="refs" class="${S.tab === 'refs' ? 'on' : ''}">សម្ពន្ធ</button>
     <button data-tab="read" class="${S.tab === 'read' ? 'on' : ''}">អានជំពូក</button>
-    <span style="flex:1"></span><span class="nav"><button data-nav="-1" title="ជំពូកមុន">‹</button><button data-nav="1" title="ជំពូកបន្ទាប់">›</button></span></div>`;
+    <span style="flex:1"></span><a class="sm" href="read.html#${b.osis}.${chNum[c]}${S.selVerse >= 0 ? '.' + (S.selVerse - v0 + 1) : ''}">អាន ›</a><a class="sm" href="maps.html#${b.osis}.${chNum[c]}">ផែនទី ›</a><span class="nav"><button data-nav="-1" title="ជំពូកមុន">‹</button><button data-nav="1" title="ជំពូកបន្ទាប់">›</button></span></div>`;
 
   if (S.tab === 'read') {
     h += '<div class="chapter-text">';

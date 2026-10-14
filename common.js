@@ -91,3 +91,66 @@ self.onmessage = async ({data:{urls, cacheName, chapters}}) => {
   }
   return { load };
 })();
+
+// ---------- Bible structure (books → chapters → global verse index) ----------
+const Bible = (() => {
+  let p = null;
+  function load() {
+    if (p) return p;
+    p = fetch('data/meta.json').then(r => r.json()).then(meta => {
+      const NB = meta.books.length, NC = meta.chapters, NV = meta.verses;
+      const chBook = new Int16Array(NC), chNum = new Int16Array(NC), chFirst = new Int32Array(NC + 1),
+        bookFirstCh = new Int32Array(NB + 1), verseCh = new Int16Array(NV);
+      let c = 0, v = 0;
+      meta.books.forEach((b, bi) => {
+        bookFirstCh[bi] = c;
+        b.ch.forEach((n, k) => { chBook[c] = bi; chNum[c] = k + 1; chFirst[c] = v; verseCh.fill(c, v, v + n); v += n; c++; });
+      });
+      chFirst[NC] = v; bookFirstCh[NB] = c;
+      const B = { meta, NB, NC, NV, chBook, chNum, chFirst, bookFirstCh, verseCh, OT_CH: bookFirstCh[39], OT_V: chFirst[bookFirstCh[39]] };
+      B.vNum = g => g - chFirst[verseCh[g]] + 1;
+      B.book = c => meta.books[chBook[c]];
+      B.chLabel = c => `${B.book(c).km} ${kmNum(chNum[c])}`;
+      B.label = g => `${B.chLabel(verseCh[g])}:${kmNum(B.vNum(g))}`;
+      B.ref = (c, g) => `${B.book(c).osis}.${chNum[c]}` + (g >= 0 ? `.${g - chFirst[c] + 1}` : '');
+      B.parse = s => { // "John.3.16" → {c, g}
+        const m = decodeURIComponent(s || '').match(/^([1-3]?[A-Za-z]+)\.(\d+)(?:\.(\d+))?$/); if (!m) return null;
+        const bi = meta.books.findIndex(b => b.osis === m[1]); if (bi < 0) return null;
+        const c = bookFirstCh[bi] + Math.min(Math.max(+m[2], 1), meta.books[bi].ch.length) - 1;
+        const g = m[3] ? chFirst[c] + Math.min(Math.max(+m[3], 1), chFirst[c + 1] - chFirst[c]) - 1 : -1;
+        return { c, g };
+      };
+      return B;
+    });
+    return p;
+  }
+  return { load };
+})();
+
+// ---------- reading progress: last position + chapters read (per browser) ----------
+const Reading = {
+  last() { try { return JSON.parse(localStorage.getItem('kb-last') || 'null'); } catch (e) { return null; } },
+  setLast(ref, label) { try { localStorage.setItem('kb-last', JSON.stringify({ ref, label, t: Date.now() })); } catch (e) {} },
+  read() { try { return new Set(JSON.parse(localStorage.getItem('kb-read') || '[]')); } catch (e) { return new Set(); } },
+  markRead(c) { const s = Reading.read(); if (s.has(c)) return s; s.add(c); try { localStorage.setItem('kb-read', JSON.stringify([...s])); } catch (e) {} return s; },
+};
+function mountContinue() {
+  const host = document.querySelector('.hdr-right'), L = Reading.last();
+  if (!host || !L || document.body.dataset.page === 'read') return;
+  const a = document.createElement('a'); a.className = 'continue'; a.href = 'read.html#' + L.ref;
+  a.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 5.5C6.5 4 9.5 4 12 5.5v14c-2.5-1.5-5.5-1.5-8 0zM12 5.5c2.5-1.5 5.5-1.5 8 0v14c-2.5-1.5-5.5-1.5-8 0z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>បន្តអាន <b>${esc(L.label)}</b>`;
+  host.prepend(a);
+}
+document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mountContinue) : mountContinue();
+
+// ---------- verse of the day (same verse for everyone on a given date) ----------
+const VOTD = ['John.3.16', 'Ps.23.1', 'Rom.8.28', 'Phil.4.13', 'Jer.29.11', 'Isa.40.31', 'Prov.3.5', 'Matt.11.28', 'Josh.1.9', 'Ps.46.1',
+  'Rom.12.2', '1Cor.13.4', 'Gal.5.22', 'Eph.2.8', 'Heb.11.1', 'Ps.119.105', 'Matt.6.33', 'John.14.6', '2Tim.3.16', 'Isa.41.10',
+  'Ps.27.1', 'Rom.5.8', 'John.1.1', 'Gen.1.1', 'Mic.6.8', 'Lam.3.22', 'Ps.121.1', '1John.4.19', 'Matt.5.9', 'Col.3.23',
+  'Ps.37.4', 'Prov.16.3', 'Isa.53.5', 'John.11.25', 'Rom.6.23', '2Cor.5.17', 'Heb.13.8', 'Jas.1.5', '1Pet.5.7', 'Rev.21.4',
+  'Ps.34.8', 'Deut.31.6', 'Matt.28.19', 'John.8.32', 'Rom.10.9', 'Eph.6.10', 'Phil.4.6', '1Thess.5.16', 'Heb.4.12', 'Ps.139.14',
+  'Eccl.3.1', 'Isa.9.6', 'Luke.2.11', 'John.15.13', 'Acts.1.8', 'Rom.15.13', 'Gal.2.20', 'Ps.91.1', 'Prov.18.10', 'Matt.22.37'];
+function votdRef(d = new Date()) {
+  const day = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+  return VOTD[day % VOTD.length];
+}

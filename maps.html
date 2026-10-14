@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ផែនទីព្រះគម្ពីរ — Bible Places Map</title>
+<meta name="description" content="Interactive map of 1,278 Bible places, linked to the Khmer Old Version 1954 (ពគប) text.">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("kb-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;600&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="maps.css">
+</head>
+<body data-page="maps">
+<header>
+  <div class="title">
+    <h1>ផែនទីព្រះគម្ពីរ</h1>
+    <p>Bible places · ទីកន្លែង ១,២៧៨ · ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)</p>
+    <nav><a href="./">ធ្នូសម្ពន្ធ<span class="en"> · Arcs</span></a><a href="read.html">អាន<span class="en"> · Read</span></a><a class="on" href="maps.html">ផែនទី<span class="en"> · Map</span></a><a href="words.html">ប្រេកង់ពាក្យ<span class="en"> · Words</span></a></nav>
+  </div>
+  <div class="hdr-right"></div>
+</header>
+
+<section class="controls">
+  <label>សៀវភៅ <select id="book"><option value="">— ទាំងអស់ —</option></select></label>
+  <label>ជំពូក <select id="chap" disabled><option value="">—</option></select></label>
+  <button id="play" class="pill" type="button" title="Play through the Bible, book by book">▶ ដំណើររឿងតាមសៀវភៅ</button>
+  <input id="pq" type="search" placeholder="រកទីកន្លែង៖ បេថ្លេហិម · Bethlehem" aria-label="Find place">
+  <span id="pstats" class="muted"></span>
+</section>
+
+<main class="mapmain">
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="legend"></div>
+    <div id="nowplaying" hidden></div>
+  </div>
+  <aside id="panel">
+    <div id="status"><span class="dot"></span><span id="statusText">កំពុងភ្ជាប់ទៅអត្ថបទ ពគប…</span></div>
+    <div id="detail"></div>
+  </aside>
+</main>
+
+<footer>
+  ទីតាំង៖ <a href="https://github.com/openbibleinfo/Bible-Geocoding-Data" target="_blank" rel="noopener">OpenBible.info Bible Geocoding Data</a> (CC-BY 4.0) ·
+  ផែនទីមូលដ្ឋាន © OpenStreetMap, CARTO, Esri ·
+  អត្ថបទ ពគប ផ្ទុកផ្ទាល់ពី <a href="https://github.com/Beblia/Holy-Bible-XML-Format" target="_blank" rel="noopener">Beblia</a> ·
+  <a href="https://github.com/khgeo" target="_blank" rel="noopener">YAM Sarath</a>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="common.js"></script>
+<script src="places.js"></script>
+<script src="maps.js"></script>
+</body>
+</html>

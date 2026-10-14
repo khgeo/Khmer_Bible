@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>អានព្រះគម្ពីរ — Read the Khmer Bible</title>
+<meta name="description" content="Read the Khmer Old Version 1954 (ពគប) chapter by chapter, with cross-references, places on a map and your reading progress.">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("kb-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;600&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="maps.css">
+<link rel="stylesheet" href="read.css">
+</head>
+<body data-page="read">
+<header>
+  <div class="title">
+    <h1>អានព្រះគម្ពីរ</h1>
+    <p>Read · ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)</p>
+    <nav><a href="./">ធ្នូសម្ពន្ធ<span class="en"> · Arcs</span></a><a class="on" href="read.html">អាន<span class="en"> · Read</span></a><a href="maps.html">ផែនទី<span class="en"> · Map</span></a><a href="words.html">ប្រេកង់ពាក្យ<span class="en"> · Words</span></a></nav>
+  </div>
+  <div class="hdr-right"></div>
+</header>
+
+<section class="controls readbar">
+  <select id="book" aria-label="សៀវភៅ"></select>
+  <select id="chap" aria-label="ជំពូក"></select>
+  <span class="nav"><button id="prev" title="ជំពូកមុន (←)">‹</button><button id="next" title="ជំពូកបន្ទាប់ (→)">›</button></span>
+  <span class="nav fs"><button id="fsm" title="អក្សរតូច">A−</button><button id="fsp" title="អក្សរធំ">A+</button></span>
+  <label class="chk"><input id="xrshow" type="checkbox" checked> លេខសម្ពន្ធ</label>
+  <div id="status"><span class="dot"></span><span id="statusText">កំពុងភ្ជាប់ទៅអត្ថបទ ពគប…</span></div>
+</section>
+
+<main class="readmain">
+  <article id="page">
+    <div id="text"></div>
+    <div id="end"></div>
+    <div class="pager"><a id="prev2" href="#">‹ <span></span></a><a id="next2" href="#"><span></span> ›</a></div>
+  </article>
+  <aside id="side">
+    <section id="votd"></section>
+    <section id="placesbox" hidden>
+      <h3>ទីកន្លែងក្នុងជំពូកនេះ</h3>
+      <div id="minimap"></div>
+      <a id="bigmap" class="sm" href="maps.html">បើកផែនទីធំ ›</a>
+    </section>
+    <section id="progress"></section>
+  </aside>
+</main>
+
+<footer>
+  អត្ថបទ ពគប ផ្ទុកផ្ទាល់ពី <a href="https://github.com/Beblia/Holy-Bible-XML-Format" target="_blank" rel="noopener">Beblia</a> ·
+  សម្ពន្ធ៖ <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noopener">OpenBible.info</a> (CC-BY) ·
+  ទីតាំង៖ <a href="https://github.com/openbibleinfo/Bible-Geocoding-Data" target="_blank" rel="noopener">OpenBible.info</a> (CC-BY 4.0) ·
+  <a href="https://github.com/khgeo" target="_blank" rel="noopener">YAM Sarath</a>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="common.js"></script>
+<script src="places.js"></script>
+<script src="read.js"></script>
+</body>
+</html>

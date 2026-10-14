@@ -1,4 +1,4 @@
-# ខ្សែសម្ពន្ធព្រះគម្ពីរ · Khmer Bible Cross-References
+# ខ្សែសម្ពន្ធព្រះគម្ពីរ · Khmer Bible Explorer
 
 An interactive arc diagram of **341,167 Bible cross-references**, linked live to the Khmer Old Version 1954 — **ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)**. Inspired by Chris Harrison & Christoph Römhild's famous cross-reference visualization.
 
@@ -15,6 +15,20 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - Filters: minimum votes, one book only, Old ↔ New Testament links only.
 - Deep links: `…/#John.3.16`, `…/#Ps.23`.
 - **Page colour** switch in the header — ភ្លឺ (light, default), ក្រដាស (paper), ងងឹត (dark). The choice is remembered and shared by both pages.
+
+## Reader (`read.html`)
+- Chapter-by-chapter reading with adjustable text size, ←/→ keys, and a small number after each verse showing its cross-references — tap it to open them inline, copy the verse, or jump to its arcs.
+- Place names are underlined and open the map; a mini-map shows the chapter's places in the order they are mentioned.
+- **Continue reading:** your last position is remembered, and every page shows a «បន្តអាន» button to go straight back.
+- **Reading progress:** a chapter counts as read once you reach its end; see your % of the whole Bible and a chapter grid per book.
+- **Verse of the day** (also on the arcs page).
+
+## Map (`maps.html`)
+- 1,278 Bible places from OpenBible.info's geocoding data, sized by how many verses mention them and coloured by type; dashed circles mark uncertain locations.
+- 352 places carry their **Khmer ពគប name**, matched against the text (verified list in `scripts/km_place_names.json` plus automatic matching).
+- Pick a book to see its places, or a chapter to see them **numbered in the order the text mentions them, joined by a route** — try `maps.html#Acts.27` (Paul's voyage to Rome) or `#Exod.14`.
+- **▶ Play** steps through all 66 books on the map.
+- Click a place for every verse that mentions it, in Khmer with the name highlighted. Base maps: map (follows the page theme), satellite, terrain.
 
 ## Word frequency page (`words.html`)
 Inspired by Pitch Interactive's Bible/Quran word comparison. Type any Khmer word and see where it appears:
@@ -41,6 +55,8 @@ Run locally: `python3 -m http.server` then open http://localhost:8000.
 # cross_references.txt: https://www.openbible.info/labs/cross-references/
 # KhmerBFBSBible.xml:   https://github.com/Beblia/Holy-Bible-XML-Format
 python3 scripts/build_data.py --xref cross_references.txt --bible KhmerBFBSBible.xml --out data
+# Bible-Geocoding-Data: https://github.com/openbibleinfo/Bible-Geocoding-Data
+python3 scripts/build_places.py --geo Bible-Geocoding-Data --bible KhmerBFBSBible.xml
 ```
 The XML is used only for chapter/verse structure. References with zero or negative votes are dropped; 218 that point outside the Khmer versification are skipped.
 
@@ -49,12 +65,16 @@ The XML is used only for chapter/verse structure. References with zero or negati
 |---|---|
 | `index.html`, `app.js` | Arc diagram page |
 | `words.html`, `words.js`, `words.css` | Word frequency page |
-| `common.js`, `style.css` | Shared live text loader, helpers and styles |
+| `read.html`, `read.js`, `read.css` | Reader |
+| `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
+| `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |
+| `data/places.json` | Places: names (Khmer/English), type, coordinates, confidence, verse indices |
 | `data/meta.json` | Books (Khmer + English names), verses per chapter |
 | `data/chapter_links.json` | `[chapterA, chapterB, refCount, maxVotes]` |
 | `data/xref/<Book>.json` | Verse-level refs, flat `[from, toStart, toEnd, votes, …]` (global verse indices) |
 
 ## Credits & licences
 - Cross-references: [OpenBible.info](https://www.openbible.info/labs/cross-references/), **CC-BY**.
+- Places: [OpenBible.info Bible Geocoding Data](https://github.com/openbibleinfo/Bible-Geocoding-Data), **CC-BY 4.0**. Base maps © OpenStreetMap contributors, CARTO, Esri.
 - Khmer text: ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប), Bible Society in Cambodia. The Beblia file marks it © BFBS/UBS 1954, 1962 — the text is loaded from that third-party source, not redistributed here. For a public or institutional deployment, check permission with the Bible Society in Cambodia.
 - Code: MIT — YAM Sarath ([@khgeo](https://github.com/khgeo)).
