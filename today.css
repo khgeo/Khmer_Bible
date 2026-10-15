@@ -83,3 +83,31 @@ header #status{margin:0}
 .praybox a{text-decoration:none}
 .praybox .pgo{background:var(--btn);color:var(--btn-text);border-radius:10px;padding:7px 14px;font-weight:600;font-size:14px}
 .praybox .pgo small{font-weight:400;opacity:.7}
+
+.dnav{display:flex;align-items:center;gap:8px;margin:6px 0 2px;font-size:13px;color:var(--muted)}
+.dnav button{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text);font:13px var(--km);padding:2px 10px;cursor:pointer;min-width:32px}
+.dnav button:hover{border-color:var(--accent)}
+.dnav span{flex:0 1 auto}
+.dnav b{color:var(--accent)}
+.dser{font-size:12px;color:var(--muted);margin-top:6px}
+.dser b{color:var(--text);font-weight:600}
+.dq{background:var(--panel);border-radius:10px;padding:10px 14px;margin:10px 0}
+.dq b,.prayer b{font-size:13px;color:var(--accent)}
+.dq p{font:15px/1.9 var(--verse);margin:4px 0 0}
+.ph{background:var(--vsel);border-radius:4px;padding:0 3px;color:var(--accent)}
+.dacts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.dacts button,.dacts a{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font:13px var(--km);color:var(--text);cursor:pointer;text-decoration:none}
+.dacts button:hover,.dacts a:hover{border-color:var(--accent)}
+.dacts button.on{background:var(--vsel);border-color:var(--accent);color:var(--accent);font-weight:600}
+details.dall{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+details.dall summary{cursor:pointer;font-size:13.5px;color:var(--link)}
+details.dall h4{font-size:13px;margin:14px 0 4px}
+details.dall h4 small{color:var(--muted);font-weight:400}
+details.dall ol{margin:0;padding-left:22px;font-size:13.5px;line-height:1.9}
+details.dall li small{color:var(--muted);font-size:11.5px}
+details.dall li a{text-decoration:none}
+details.dall li.done a{color:var(--muted)}
+details.dall li.done::marker{content:'✓ ';color:#3fa66b}
+details.dall li.cur a{font-weight:600;color:var(--accent)}
+.dbar{height:5px;border-radius:3px;background:var(--meter);margin:8px 0 4px;overflow:hidden}
+.dbar i{display:block;height:100%;background:var(--accent)}

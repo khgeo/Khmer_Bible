@@ -26,15 +26,13 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Verse of the day** (also on the arcs page).
 
 ## Today (`today.html`)
-- **Daily devotional** — the verse of the day with its surrounding verses, plus a guided journal (ការសង្កេត · ការអនុវត្ត · ការអធិស្ឋាន — observation, application, prayer) saved per day; earlier entries stay readable below.
-- **Your own devotional texts:** add entries to `data/devotionals.json` and they replace the default on that date:
-  ```json
-  [{ "date": "12-25", "ref": "Luke.2.11", "title": "…", "body": "…", "prayer": "…", "author": "…" }]
-  ```
-  `date` is `MM-DD` (every year) or `YYYY-MM-DD` (one day). Only include texts you wrote or have permission to publish.
+- **Daily devotional** — 60 short devotionals in Khmer, in 6 ten-day series (Who is God? · Knowing Jesus · Salvation and grace · The Word and prayer · Living as God's children · Hope in hard times), plus special ones for New Year, Christmas Eve, Christmas and New Year's Eve. Everyone sees the same devotional on a given date; the cycle repeats every 60 days. Each has a key verse and a passage to read (shown live from ពគប), a short reflection, a question to think about and a prayer.
+- Browse earlier or later days (‹ ›), open any devotional from the full list (link: `today.html#devo-hope-peace`), mark it as read (progress is shown), share it, or go straight to the guided prayer.
+- **Journal** — observation (pre-filled with the day's question), application and prayer, saved per day; earlier entries stay readable below.
+- **Editing the devotionals:** `scripts/devo_source.py` → `python3 scripts/build_devos.py` (checks every reference against the Khmer versification). Add or change series freely; add `DATED` entries (`MM-DD`) for special days. The texts never quote the verses themselves — the verses are always loaded from ពគប. **Please have a pastor review them before wide publication.**
 - **Reading plans:** Whole Bible in a year (OT + NT each day), New Testament in 90 days, the four Gospels in 30 days, Psalms & Proverbs in 60 days. Chapters are spread by verse count so days are even. A day ticks itself off when you finish its chapters in the reader (or tick it by hand); a calendar shows done, missed and today, and you see how many days you are behind. The reader shows the plan's next chapter at the end of each chapter.
 - **Highlights & notes:** tap any verse in the reader to colour it (yellow, green, blue, pink), write a note, copy it or share a link. All highlights are listed on this page, filterable by colour or notes.
-- Journal, highlights and plan are included in the reading-data backup file.
+- Journal, devotionals read, highlights and plan are included in the reading-data backup file.
 
 ## Questions & answers (`qa.html`)
 - **299 questions** in 18 categories — the Bible, God, Jesus, the Holy Spirit, salvation, prayer, Christian life, sin, family, work & money, suffering, the church, death & eternity, angels, the last days, people & events, **faith & Khmer culture** (ancestors, family ceremonies, amulets, lucky days, Khmer New Year…), and **Bible facts**.
@@ -104,6 +102,7 @@ python3 scripts/build_data.py --xref cross_references.txt --bible KhmerBFBSBible
 python3 scripts/build_places.py --geo Bible-Geocoding-Data --bible KhmerBFBSBible.xml
 python3 scripts/build_qa.py --bible KhmerBFBSBible.xml
 python3 scripts/build_prayer.py
+python3 scripts/build_devos.py
 ```
 The XML is used only for chapter/verse structure. References with zero or negative votes are dropped; 218 that point outside the Khmer versification are skipped.
 
@@ -119,7 +118,7 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `videos.html`, `data/videos.json` | BibleProject Khmer videos, mapped to chapters and questions |
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
-| `data/devotionals.json` | Optional devotional texts by date (empty by default) |
+| `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
 | `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |
 | `data/places.json` | Places: names (Khmer/English), type, coordinates, confidence, verse indices |

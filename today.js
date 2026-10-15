@@ -11,50 +11,116 @@ const UI = { planDay: -1, hlFilter: '', hlSort: 'book', confirmStop: false };
   const d = new Date();
   $('#dateline').textContent = `ថ្ងៃ${KM_DAY[d.getDay()]} ទី${kmNum(d.getDate())} ខែ${KM_MONTH[d.getMonth()]} ឆ្នាំ${kmNum(d.getFullYear())} · ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)`;
   DEVOS = await fetch('data/devotionals.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  const picked = fromHashDevo();
   renderAll();
+  if (picked) setTimeout(() => $('#devo').scrollIntoView({ block: 'start' }), 50);
   KhmerText.load(B.meta).then(t => { TEXT = t; renderAll(); }).catch(() => {});
-  if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ block: 'start' }), 300);
+  if (location.hash && !location.hash.startsWith('#devo-')) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ block: 'start' }), 300);
 })().catch(e => { console.error(e); setStatus('err', e.message); });
 
 function renderAll() { renderDevo(); renderPlan(); renderHighlights(); }
 const vt = g => TEXT ? esc(TEXT[g] || '') : '…';
 
 // ---------- devotional ----------
-// If data/devotionals.json has an entry for today (date "MM-DD" or "YYYY-MM-DD"), show it.
-// Otherwise: the verse of the day with its context, and a guided S.O.A.P. journal.
-function todaysDevo() {
-  const k = Stats.dayKey();
-  return DEVOS.find(x => x.date === k) || DEVOS.find(x => x.date === k.slice(5)) || null;
+// data/devotionals.json = { series, items, dated }. Everyone sees the same devotional on a given
+// date: a dated entry ("MM-DD") if there is one, otherwise the series cycle by day number.
+// (An older plain array of {date, ref, title, body, prayer} entries still works.)
+const DV = { off: 0, pick: null };
+const DONE_KEY = 'kb-devo';
+const Done = {
+  all() { try { return JSON.parse(localStorage.getItem(DONE_KEY) || '{}') || {}; } catch (e) { return {}; } },
+  toggle(id) { const a = Done.all(); if (a[id]) delete a[id]; else a[id] = { t: Date.now(), d: Stats.dayKey() }; try { localStorage.setItem(DONE_KEY, JSON.stringify(a)); } catch (e) {} return !!a[id]; },
+};
+const dayNo = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5) - Math.floor(Date.UTC(2026, 0, 1) / 864e5);
+function devoFor(d) {
+  const mmdd = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, k = Stats.dayKey(d);
+  if (Array.isArray(DEVOS)) { const x = DEVOS.find(x => x.date === k) || DEVOS.find(x => x.date === mmdd); return x ? { t: x.title, r: x.ref, b: x.body, p: x.prayer, a: x.author } : null; }
+  if (!DEVOS.items || !DEVOS.items.length) return null;
+  const dt = (DEVOS.dated || []).find(x => x.date === mmdd); if (dt) return dt;
+  const n = DEVOS.items.length; return DEVOS.items[((dayNo(d) % n) + n) % n];
+}
+const allDevos = () => Array.isArray(DEVOS) ? [] : [...(DEVOS.items || []), ...(DEVOS.dated || [])];
+function spanOf(r) {
+  const m = r && r.match(/^(.+\.\d+)\.(\d+)(?:-(\d+))?$/); if (!m) return null;
+  const a = B.parse(`${m[1]}.${m[2]}`); if (!a) return null;
+  return [a.g, m[3] ? a.g + (+m[3] - +m[2]) : a.g];
+}
+const spanLabel = r => { const s = spanOf(r); return s ? B.label(s[0]) + (s[1] > s[0] ? '–' + kmNum(B.vNum(s[1])) : '') : r; };
+function fromHashDevo() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith('devo-') && allDevos().some(x => x.id === h.slice(5))) { DV.pick = h.slice(5); DV.off = 0; return true; }
+  return false;
 }
 function renderDevo() {
-  const dv = todaysDevo(), ref = dv && dv.ref ? dv.ref : votdRef(), r = B.parse(ref);
+  const now = new Date(), date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + DV.off);
+  const picked = DV.pick && allDevos().find(x => x.id === DV.pick);
+  const dv = picked || devoFor(date), isToday = !picked && DV.off === 0;
+  const ref = dv && dv.r ? dv.r : votdRef(), r = B.parse(ref);
   const k = Stats.dayKey(), j = Journal.get(k);
-  let ctx = '';
-  if (r) {
-    const c = r.c, a = Math.max(B.chFirst[c], r.g - 2), b = Math.min(B.chFirst[c + 1] - 1, r.g + 2);
-    for (let g = a; g <= b; g++) ctx += `<span class="${g === r.g ? 'key' : ''}"><sup>${kmNum(B.vNum(g))}</sup>${vt(g)} </span>`;
+  const ser = dv && dv.s && DEVOS.series ? DEVOS.series.find(x => x.id === dv.s) : null;
+  const done = Done.all(), total = allDevos().length, nDone = allDevos().filter(x => done[x.id]).length;
+  // passage: the devotional's reading, or five verses around the verse of the day
+  let passage = '', plabel = '';
+  const sp = dv && dv.read ? spanOf(dv.read) : r ? [Math.max(B.chFirst[r.c], r.g - 2), Math.min(B.chFirst[r.c + 1] - 1, r.g + 2)] : null;
+  if (sp) {
+    for (let g = sp[0]; g <= sp[1]; g++) passage += `<span class="${r && g === r.g ? 'key' : ''}"><sup>${kmNum(B.vNum(g))}</sup>${vt(g)} </span>`;
+    plabel = dv && dv.read ? spanLabel(dv.read) : B.chLabel(r.c);
   }
+  const dateLbl = picked ? '' : `ថ្ងៃ${KM_DAY[date.getDay()]} ${kmNum(date.getDate())} ${KM_MONTH[date.getMonth()]}`;
   const prompts = [
-    ['o', 'ការសង្កេត', 'តើខនេះប្រាប់អ្វីខ្លះ អំពីព្រះ និងអំពីមនុស្ស?'],
+    ['o', 'ការសង្កេត', dv && dv.q ? dv.q : 'តើខនេះប្រាប់អ្វីខ្លះ អំពីព្រះ និងអំពីមនុស្ស?'],
     ['a', 'ការអនុវត្ត', 'តើខ្ញុំអាចរស់នៅតាមខនេះ នៅថ្ងៃនេះ យ៉ាងដូចម្ដេច?'],
     ['p', 'ការអធិស្ឋាន', 'សរសេរការអធិស្ឋានខ្លីមួយ…'],
   ];
+  const sr = sp ? B.ref(B.verseCh[sp[0]], sp[0]) : '';
   $('#devo').innerHTML = `<div class="kicker">ការតាំងចិត្តប្រចាំថ្ងៃ · DAILY DEVOTIONAL</div>
-    ${dv && dv.title ? `<h2>${esc(dv.title)}</h2>` : '<h2>ខគម្ពីរប្រចាំថ្ងៃ</h2>'}
+    <div class="dnav">${picked ? `<button data-dv="today" class="dtoday">‹ ត្រឡប់ទៅថ្ងៃនេះ</button>` :
+      `<button data-dv="-1" aria-label="ថ្ងៃមុន">‹</button><span>${isToday ? '<b>ថ្ងៃនេះ</b> · ' : ''}${dateLbl}</span><button data-dv="1" aria-label="ថ្ងៃបន្ទាប់">›</button>${isToday ? '' : '<button data-dv="today" class="dtoday">ថ្ងៃនេះ</button>'}`}</div>
+    ${ser ? `<div class="dser">ស៊េរី៖ <b>${esc(ser.km)}</b> · ${kmNum(dv.n)}/${kmNum(ser.n)}</div>` : dv && dv.date ? '<div class="dser">ការតាំងចិត្តពិសេស</div>' : ''}
+    <h2>${dv && dv.t ? esc(dv.t) : 'ខគម្ពីរប្រចាំថ្ងៃ'}</h2>
     ${r ? `<blockquote>${vt(r.g)}<cite>— ${esc(B.label(r.g))}</cite></blockquote>` : ''}
-    ${dv && dv.body ? `<div class="body">${esc(dv.body).replace(/\n+/g, '</p><p>').replace(/^/, '<p>')}</p></div>` : ''}
-    ${dv && dv.prayer ? `<div class="prayer"><b>ការអធិស្ឋាន</b><p>${esc(dv.prayer)}</p></div>` : ''}
-    ${dv && dv.author ? `<div class="muted tiny">— ${esc(dv.author)}</div>` : ''}
-    ${r ? `<details class="ctx"><summary>បរិបទ · ${esc(B.chLabel(r.c))}</summary><p>${ctx}</p>
-      <a href="read.html#${B.ref(r.c, r.g)}">អានជំពូកទាំងមូល ›</a> · <a href="./#${B.ref(r.c, r.g)}">ខ្សែសម្ពន្ធ ›</a></details>` : ''}
-    <h3>កំណត់ហេតុរបស់ខ្ញុំ <small class="muted">· រក្សាទុកដោយស្វ័យប្រវត្តិ</small></h3>
-    ${prompts.map(([f, t, ph]) => `<label class="jq"><span>${t}</span><textarea data-f="${f}" rows="2" placeholder="${ph}">${esc(j[f] || '')}</textarea></label>`).join('')}
-    <div class="jfoot"><span class="muted tiny" id="saved"></span>${pastJournal()}</div>
+    ${sp ? `<details class="ctx"${dv && dv.read ? '' : ''}><summary>📖 អាន៖ ${esc(plabel)}</summary><p>${passage}</p>
+      <a href="read.html#${sr}">អានជំពូកទាំងមូល ›</a> · <a href="./#${r ? B.ref(r.c, r.g) : sr}">ខ្សែសម្ពន្ធ ›</a></details>` : ''}
+    ${dv && dv.b ? `<div class="body">${esc(dv.b).replace(/\n+/g, '</p><p>').replace(/^/, '<p>')}</p></div>` : ''}
+    ${dv && dv.q ? `<div class="dq"><b>សំណួរពិចារណា</b><p>${esc(dv.q)}</p></div>` : ''}
+    ${dv && dv.p ? `<div class="prayer"><b>ការអធិស្ឋាន</b><p>${esc(dv.p).replace(/\[([^\]]+)\]/g, '<span class="ph">[$1]</span>')}</p></div>` : ''}
+    ${dv && dv.a ? `<div class="muted tiny">— ${esc(dv.a)}</div>` : ''}
+    ${dv && dv.id ? `<div class="dacts"><button data-done class="${done[dv.id] ? 'on' : ''}">${done[dv.id] ? '✓ បានអានរួច' : '○ សម្គាល់ថាបានអាន'}</button><button data-dshare>ចែករំលែក</button><a href="prayer.html#guided">🙏 អធិស្ឋាន</a></div>` : ''}
+    ${isToday ? `<h3>កំណត់ហេតុរបស់ខ្ញុំ <small class="muted">· រក្សាទុកដោយស្វ័យប្រវត្តិ</small></h3>
+    ${prompts.map(([f, t, ph]) => `<label class="jq"><span>${t}</span><textarea data-f="${f}" rows="2" placeholder="${esc(ph)}">${esc(j[f] || '')}</textarea></label>`).join('')}
+    <div class="jfoot"><span class="muted tiny" id="saved"></span>${pastJournal()}</div>` : `<p class="muted tiny">កំណត់ហេតុប្រចាំថ្ងៃ មាននៅថ្ងៃនេះ — <a href="#" data-dv="today">ត្រឡប់ទៅថ្ងៃនេះ</a></p>`}
+    ${total ? seriesList(done, nDone, total, dv) : ''}
     ${prayBox()}`;
+  $('#devo').querySelectorAll('[data-dv]').forEach(b => b.onclick = e => {
+    e.preventDefault(); const v = b.dataset.dv;
+    if (v === 'today') { DV.off = 0; DV.pick = null; } else { DV.pick = null; DV.off += +v; }
+    history.replaceState(null, '', location.pathname + location.search); renderDevo();
+    $('#devo').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+  $('#devo').querySelectorAll('[data-pick]').forEach(a => a.onclick = e => {
+    e.preventDefault(); DV.pick = a.dataset.pick; history.replaceState(null, '', '#devo-' + DV.pick); renderDevo();
+    $('#devo').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+  const db = $('#devo [data-done]'); if (db) db.onclick = () => { if (Done.toggle(dv.id)) track('devo-done'); renderDevo(); };
+  const sb = $('#devo [data-dshare]'); if (sb) sb.onclick = () => {
+    const url = location.href.split('#')[0] + '#devo-' + dv.id, text = `${dv.t}\n${r ? TEXT ? TEXT[r.g] + '\n— ' + B.label(r.g) : B.label(r.g) : ''}\n\n${dv.b}`;
+    const ok = () => { sb.textContent = 'រួចរាល់ ✓'; };
+    (navigator.share ? navigator.share({ title: dv.t, text, url }) : navigator.clipboard.writeText(text + '\n\n' + url)).then(ok, () => {});
+    track('devo-share');
+  };
   $('#devo').querySelectorAll('textarea').forEach(ta => ta.oninput = () => {
     Journal.set(k, ta.dataset.f, ta.value); Journal.set(k, 'ref', ref); Journal.set(k, 't', Date.now());
     $('#saved').textContent = 'បានរក្សាទុក ✓';
   });
+}
+function seriesList(done, nDone, total, cur) {
+  const pct = Math.round(nDone / total * 100);
+  return `<details class="dall"><summary>ការតាំងចិត្តទាំងអស់ · បានអាន ${kmNum(nDone)}/${kmNum(total)}</summary>
+    <div class="dbar"><i style="width:${pct}%"></i></div>
+    ${DEVOS.series.map(s => `<h4>${esc(s.km)} <small>${esc(s.en)}</small></h4><ol>${DEVOS.items.filter(x => x.s === s.id).map(x =>
+      `<li class="${done[x.id] ? 'done' : ''}${cur && cur.id === x.id ? ' cur' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${esc(spanLabel(x.r))}</small></li>`).join('')}</ol>`).join('')}
+    ${DEVOS.dated && DEVOS.dated.length ? `<h4>ថ្ងៃពិសេស</h4><ol>${DEVOS.dated.map(x => `<li class="${done[x.id] ? 'done' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${kmNum(+x.date.slice(3))}/${kmNum(+x.date.slice(0, 2))}</small></li>`).join('')}</ol>` : ''}
+  </details>`;
 }
 function prayBox() {
   let n = 0; try { n = Object.values(JSON.parse(localStorage.getItem('kb-prayers') || '{}')).filter(x => !x.del && !x.a).length; } catch (e) {}
