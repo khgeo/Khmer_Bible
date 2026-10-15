@@ -2,7 +2,7 @@
 'use strict';
 
 let B, P, TEXT = null, mini = null, miniLayer = null;
-const XREF = new Map();
+const XREF = new Map(), QAIDX = {};
 const S = { c: 0, g: -1, open: -1, tool: -1, at: Date.now() };
 let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
 
@@ -37,6 +37,13 @@ let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
   renderStats();
   renderPlan();
   Places.load(B).then(p => { P = p; render(); });
+  fetch('data/qa.json').then(x => x.json()).then(q => {
+    for (const it of q.items) for (const ref of it.r) {
+      const m = ref.match(/^(.+\.\d+)\.(\d+)(?:-(\d+))?$/), a = m && B.parse(`${m[1]}.${m[2]}`); if (!a) continue;
+      for (let g = a.g; g <= a.g + (m[3] ? +m[3] - +m[2] : 0); g++) (QAIDX[g] = QAIDX[g] || []).push(it);
+    }
+    render(false);
+  }).catch(() => {});
   route();
   KhmerText.load(B.meta).then(t => { TEXT = t; render(true); renderVotd(); }).catch(() => {});
   renderVotd();
@@ -92,6 +99,7 @@ async function render(scroll) {
       const n = cnt.get(g) || 0, hl = HL[g];
       h += `<span class="v${g === S.g ? ' sel' : ''}${hl && hl.c ? ' hl-' + hl.c : ''}${g === S.tool ? ' tooling' : ''}" id="g${g}" data-g="${g}"><sup>${kmNum(g - v0 + 1)}</sup>${t}` +
         (hl && hl.n ? `<button class="nt" data-t="${g}" title="${esc(hl.n)}">✎</button>` : '') +
+        (QAIDX[g] ? `<a class="qam" href="qa.html#${QAIDX[g][0].id}" title="${esc(QAIDX[g].map(x => x.q).join(' · '))}">?</a>` : '') +
         `${n ? `<button class="xr" data-x="${g}" title="${n} cross-references">${kmNum(n)}</button>` : ''} </span>`;
       if (g === S.tool) h += toolbox(g, hl);
       if (g === S.open) h += xbox(g, arr);
@@ -134,6 +142,7 @@ function toolbox(g, hl) {
     ${hl && hl.c ? '<button class="clr" data-c="" title="លុបពណ៌">✕</button>' : ''}</span>
     <span class="acts"><button data-copy="${g}">ចម្លង</button><button data-share="${g}">តំណ</button><a href="./#${B.ref(B.verseCh[g], g)}">ធ្នូ ›</a></span></div>
     <textarea placeholder="កំណត់ចំណាំរបស់អ្នក…" rows="2">${esc(hl && hl.n || '')}</textarea>
+    ${QAIDX[g] ? `<div class="tqa"><b>សំណួរដែលប្រើខនេះ</b>${QAIDX[g].slice(0, 4).map(it => `<a href="qa.html#${it.id}">${esc(it.q)}</a>`).join('')}</div>` : ''}
     <div class="muted tiny">រក្សាទុកក្នុងកម្មវិធីរុករករបស់អ្នក · មើលទាំងអស់នៅទំព័រ <a href="today.html#highlights">ថ្ងៃនេះ</a></div></div>`;
 }
 function bindToolbox() {

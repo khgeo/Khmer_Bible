@@ -36,6 +36,15 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Highlights & notes:** tap any verse in the reader to colour it (yellow, green, blue, pink), write a note, copy it or share a link. All highlights are listed on this page, filterable by colour or notes.
 - Journal, highlights and plan are included in the reading-data backup file.
 
+## Questions & answers (`qa.html`)
+- **299 questions** in 18 categories — the Bible, God, Jesus, the Holy Spirit, salvation, prayer, Christian life, sin, family, work & money, suffering, the church, death & eternity, angels, the last days, people & events, **faith & Khmer culture** (ancestors, family ceremonies, amulets, lucky days, Khmer New Year…), and **Bible facts**.
+- Each answer is a short summary; **the verses themselves are the answer** — every cited passage (1,000+ references) is shown in full, loaded live from ពគប, with links to read it or see its arcs.
+- Topics where sincere Christians disagree (baptism, end times, spiritual gifts…) are marked **មានការយល់ខុសគ្នា** and present the passages instead of one denomination's view.
+- **Bible facts** are computed from the data at build time: chapter and verse counts, longest/shortest chapter and verse in ពគប, most cross-referenced verse, most-mentioned place, word counts.
+- Search in Khmer or English, filter by category, 🎲 random question, shareable links (`qa.html#salvation-1`).
+- In the reader, verses used by an answer show a small **?** and the verse toolbar lists those questions.
+- Source: `scripts/qa_source.py` (easy to edit and extend). Rebuild with `python3 scripts/build_qa.py --bible KhmerBFBSBible.xml` — every reference is validated against the Khmer versification (e.g. Micah 5:2 in English = មីកា ៥:១ in ពគប). **Please have a pastor or Bible teacher review the answers before wide publication;** readers can suggest questions or corrections through GitHub Issues.
+
 ## Map (`maps.html`)
 - 1,278 Bible places from OpenBible.info's geocoding data, sized by how many verses mention them and coloured by type; dashed circles mark uncertain locations.
 - 352 places carry their **Khmer ពគប name**, matched against the text (verified list in `scripts/km_place_names.json` plus automatic matching).
@@ -59,13 +68,13 @@ To use another source, open the page with `?text=<url-to-xml>` (same Beblia XML 
 ## Visitor statistics (owner)
 Anonymous site-wide counts via [GoatCounter](https://khgeo.goatcounter.com) — no cookies, no personal data, no consent banner needed. Dashboard: https://khgeo.goatcounter.com
 - Page views, unique visitors, returning visits, countries, devices and referrers per page.
-- Events: `finished-chapter`, `word-search`, `map-play`, `copy-verse`, `highlight`, `plan-start` — counts only; no chapter, search word or reader identity is sent.
+- Events: `finished-chapter`, `word-search`, `map-play`, `copy-verse`, `highlight`, `plan-start`, `qa-open` — counts only; no chapter, search word or reader identity is sent.
 - Visits from `localhost` are not counted. To remove tracking, delete the `gc.zgo.at` script line at the bottom of each `.html` page.
 
 ## Publish on GitHub Pages
-1. Create a repository (e.g. `khgeo/khmer-bible-arcs`) and push these files to `main`.
+1. Create a repository (e.g. `khgeo/Khmer_Bible`) and push these files to `main`.
 2. Settings → Pages → *Deploy from a branch* → `main` / root.
-3. Visit `https://khgeo.github.io/khmer-bible-arcs/`.
+3. Visit `https://khgeo.github.io/Khmer_Bible/`.
 
 Run locally: `python3 -m http.server` then open http://localhost:8000.
 
@@ -76,6 +85,7 @@ Run locally: `python3 -m http.server` then open http://localhost:8000.
 python3 scripts/build_data.py --xref cross_references.txt --bible KhmerBFBSBible.xml --out data
 # Bible-Geocoding-Data: https://github.com/openbibleinfo/Bible-Geocoding-Data
 python3 scripts/build_places.py --geo Bible-Geocoding-Data --bible KhmerBFBSBible.xml
+python3 scripts/build_qa.py --bible KhmerBFBSBible.xml
 ```
 The XML is used only for chapter/verse structure. References with zero or negative votes are dropped; 218 that point outside the Khmer versification are skipped.
 
@@ -86,6 +96,8 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `words.html`, `words.js`, `words.css` | Word frequency page |
 | `read.html`, `read.js`, `read.css` | Reader |
 | `today.html`, `today.js`, `today.css` | Devotional, reading plans, highlights |
+| `qa.html`, `qa.js`, `qa.css` | Questions & answers |
+| `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/devotionals.json` | Optional devotional texts by date (empty by default) |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
 | `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |
