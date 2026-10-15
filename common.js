@@ -326,3 +326,44 @@ const Journal = {
   set(k, field, val) { const a = Journal.all(); a[k] = Object.assign({}, a[k], { [field]: val }); if (!['o', 'a', 'p'].some(f => a[k][f] && String(a[k][f]).trim())) delete a[k];
     try { localStorage.setItem('kb-journal', JSON.stringify(a)); } catch (e) {} },
 };
+
+// ---------- BibleProject Khmer videos (embedded from their YouTube channel, with credit) ----------
+const Videos = (() => {
+  let p = null;
+  const load = () => p || (p = fetch('data/videos.json').then(r => r.json()).catch(() => ({ videos: [] })));
+  const thumb = v => v.yt ? `https://i.ytimg.com/vi/${v.yt}/mqdefault.jpg` : 'assets/icon.svg';
+  // overviews covering a chapter (global chapter index → book index + chapter number)
+  async function forChapter(B, c) {
+    const d = await load(), bi = B.chBook[c], n = B.chNum[c];
+    return d.videos.filter(v => v.s && v.s.some(([b, a, z]) => b === bi && n >= a && n <= z));
+  }
+  async function forQuestion(id) { const d = await load(); return d.videos.filter(v => v.q && v.q.includes(id)); }
+  function card(v, i) {
+    return `<button class="vcard" data-vi="${i}" type="button"><span class="vth"><img loading="lazy" src="${thumb(v)}" alt="" onerror="this.style.visibility='hidden'"><b>▶</b></span>
+      <span class="vt">${esc(v.t)}</span><small>BibleProject</small></button>`;
+  }
+  // click-to-play modal; youtube-nocookie keeps YouTube from setting cookies until play
+  function play(v) {
+    track('video-play');
+    if (!v.yt) { window.open('https://bibleproject.com/km/', '_blank', 'noopener'); return; }
+    let m = document.getElementById('vmodal');
+    if (!m) {
+      m = document.createElement('div'); m.id = 'vmodal';
+      m.innerHTML = `<div class="vbox" role="dialog" aria-modal="true"><div class="vhead"><b></b><button class="vx" aria-label="បិទ">✕</button></div>
+        <div class="vframe"></div><div class="vcredit">BibleProject is the author and owner of this content. ·
+        <a href="https://bibleproject.com/km/" target="_blank" rel="noopener">bibleproject.com/km</a> ·
+        <a class="vyt" target="_blank" rel="noopener">YouTube ›</a></div></div>`;
+      document.body.appendChild(m);
+      const close = () => { m.classList.remove('on'); m.querySelector('.vframe').innerHTML = ''; };
+      m.onclick = e => { if (e.target === m || e.target.closest('.vx')) close(); };
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    }
+    m.querySelector('.vhead b').textContent = v.t;
+    m.querySelector('.vyt').href = `https://www.youtube.com/watch?v=${v.yt}`;
+    m.querySelector('.vframe').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${v.yt}?autoplay=1&rel=0" title="${esc(v.t)}"
+      allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    m.classList.add('on');
+  }
+  function bind(root, list) { root.querySelectorAll('.vcard').forEach(b => b.onclick = () => play(list[+b.dataset.vi])); }
+  return { load, forChapter, forQuestion, card, play, bind, thumb };
+})();

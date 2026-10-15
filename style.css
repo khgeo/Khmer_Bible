@@ -115,3 +115,22 @@ nav a:hover{color:var(--text)}
 .tabs .sm{font-size:12.5px;text-decoration:none;align-self:center;margin-right:4px}
 @media (max-width:600px){nav .en{display:none} nav a{padding:4px 12px}}
 .continue .streak{margin-left:4px;padding-left:8px;border-left:1px solid var(--line);font-weight:600}
+
+/* ---- BibleProject video cards + player (shared) ---- */
+.vcard{display:flex;flex-direction:column;gap:4px;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:var(--text);font:inherit}
+.vth{position:relative;display:block;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:var(--panel);border:1px solid var(--line)}
+.vth img{width:100%;height:100%;object-fit:cover;display:block}
+.vth b{position:absolute;inset:auto auto 8px 8px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.65);color:#fff;font-size:13px}
+.vcard:hover .vth{border-color:var(--accent)} .vcard:hover .vth b{background:#c2370f}
+.vcard .vt{font-size:13px;font-weight:600;line-height:1.6}
+.vcard small{font-size:11px;color:var(--muted)}
+#vmodal{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
+#vmodal.on{display:flex}
+.vbox{width:min(960px,100%);background:var(--bg);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.vhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px}
+.vhead b{font-size:15px}
+.vx{background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer}
+.vframe{aspect-ratio:16/9;background:#000}
+.vframe iframe{width:100%;height:100%;border:0;display:block}
+.vcredit{font-size:12px;color:var(--muted);padding:8px 14px}
+.vcredit a{text-decoration:none}

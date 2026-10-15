@@ -123,7 +123,7 @@ async function render(scroll) {
     else window.scrollTo({ top: 0 });
     Reading.setLast(B.ref(c, S.g >= 0 ? S.g : -1), S.g >= 0 ? B.label(S.g) : B.chLabel(c));
   }
-  renderPlaces(pls); renderProgress();
+  renderPlaces(pls); renderProgress(); renderVideos();
 }
 function xbox(g, arr) {
   const refs = [];
@@ -299,4 +299,12 @@ function renderPlanNext() {
   el.innerHTML = nxt !== undefined
     ? `<a href="#${B.ref(nxt, -1)}"><small>ផែនការ · ថ្ងៃទី ${kmNum(day + 1)} · បន្ទាប់</small><b>${esc(B.chLabel(nxt))} ›</b></a>`
     : `<a href="today.html#plan"><small>ផែនការ · ថ្ងៃទី ${kmNum(day + 1)}</small><b>ជំពូកចុងក្រោយនៃថ្ងៃនេះ — អានដល់ចុង ដើម្បីបញ្ចប់ ✓</b></a>`;
+}
+
+// ---------- BibleProject overview video(s) for this chapter ----------
+async function renderVideos() {
+  const c = S.c, list = await Videos.forChapter(B, c); if (c !== S.c) return;
+  $('#vidbox').hidden = !list.length;
+  $('#vids').innerHTML = list.map((v, i) => Videos.card(v, i)).join('');
+  Videos.bind($('#vids'), list);
 }

@@ -44,3 +44,4 @@ header #status{margin:0}
   #cats{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
   #cats button{flex:none}
 }
+.qvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,260px));gap:12px}

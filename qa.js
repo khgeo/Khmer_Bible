@@ -29,6 +29,9 @@ function setHash() { history.replaceState(null, '', UI.cat ? '#' + UI.cat : loca
 function openOnly(id, fromhash) {
   UI.open = new Set([id]); const it = QA.items.find(x => x.id === id);
   if (UI.cat && it.c !== UI.cat) UI.cat = '';
+  // make sure the question is within the rendered part of the list
+  const idx = QA.items.filter(x => !UI.cat || x.c === UI.cat).indexOf(it);
+  UI.shown = Math.max(UI.shown, idx + 20);
   if (!fromhash) history.replaceState(null, '', '#' + id);
   render();
   const el = document.getElementById('q-' + id); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -72,6 +75,12 @@ function render() {
     (navigator.share ? navigator.share({ title: QA.items.find(x => x.id === b.dataset.copy).q, url }) : navigator.clipboard.writeText(url)).then(() => { b.textContent = 'រួចរាល់ ✓'; }, () => {});
   });
   const mb = $('#more'); if (mb) mb.onclick = () => { UI.shown += 60; render(); };
+  // related BibleProject videos for opened questions
+  $('#list').querySelectorAll('.qvids').forEach(async el => {
+    const vs = await Videos.forQuestion(el.dataset.for); if (!vs.length) return;
+    el.innerHTML = `<h4>វីដេអូពន្យល់</h4><div class="qvgrid">${vs.map((v, i) => Videos.card(v, i)).join('')}</div>`;
+    Videos.bind(el, vs);
+  });
 }
 function body(it) {
   const verses = it.r.map(r => {
@@ -89,5 +98,6 @@ function body(it) {
     ${it.d ? '<p class="dnote">គ្រីស្ទានស្មោះត្រង់មានការយល់ខុសគ្នាលើប្រធានបទនេះ។ សូមអានខគម្ពីរទាំងនេះ ហើយពិភាក្សាជាមួយពួកជំនុំរបស់អ្នក។</p>' : ''}
     <h4>ព្រះគម្ពីរចែងថា</h4>${verses}
     ${related.length ? `<h4>សំណួរទាក់ទង</h4><div class="rel">${related.map(x => `<a href="#${x.id}">${esc(x.q)}</a>`).join('')}</div>` : ''}
+    <div class="qvids" data-for="${it.id}"></div>
     <div class="qacts"><button data-copy="${it.id}">ចែករំលែក</button></div></div>`;
 }
