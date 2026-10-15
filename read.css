@@ -41,7 +41,7 @@ a.place:hover{color:var(--accent)}
 #end{height:1px}
 .loading{font-size:15px}
 
-#side{position:sticky;top:12px;align-self:start;display:flex;flex-direction:column;gap:18px;padding-top:18px}
+#side{position:sticky;top:calc(var(--hdr,0px) + 12px);align-self:start;display:flex;flex-direction:column;gap:18px;padding-top:18px}
 #side h3{font-size:13.5px;margin:0 0 8px;font-weight:600}
 #minimap{height:240px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
 .bigpct{display:flex;gap:10px;align-items:baseline}

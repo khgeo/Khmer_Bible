@@ -234,6 +234,22 @@ function mountContinue() {
 }
 document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mountContinue) : mountContinue();
 
+// Sticky header: keep its height in --hdr (for other sticky bits and jump-to offsets) and
+// shrink it once the page is scrolled. Two thresholds so it doesn't flicker at the edge.
+function mountStickyHeader() {
+  const h = document.querySelector('body > header'); if (!h) return;
+  const setH = () => document.documentElement.style.setProperty('--hdr', h.offsetHeight + 'px');
+  setH(); if (window.ResizeObserver) new ResizeObserver(setH).observe(h); else addEventListener('resize', setH);
+  let on = false, raf = 0;
+  const check = () => { raf = 0; const y = scrollY; const want = on ? y > 8 : y > 90; if (want !== on) { on = want; document.body.classList.toggle('compact', on);
+      // on phones the menu becomes one scrolling row: keep the current page's tab in view
+      const nav = h.querySelector('nav'), a = nav && nav.querySelector('a.on');
+      if (on && a && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = a.offsetLeft - nav.offsetLeft - (nav.clientWidth - a.offsetWidth) / 2; } };
+  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(check); }, { passive: true });
+  check();
+}
+document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mountStickyHeader) : mountStickyHeader();
+
 // ---------- verse of the day (same verse for everyone on a given date) ----------
 const VOTD = ['John.3.16', 'Ps.23.1', 'Rom.8.28', 'Phil.4.13', 'Jer.29.11', 'Isa.40.31', 'Prov.3.5', 'Matt.11.28', 'Josh.1.9', 'Ps.46.1',
   'Rom.12.2', '1Cor.13.4', 'Gal.5.22', 'Eph.2.8', 'Heb.11.1', 'Ps.119.105', 'Matt.6.33', 'John.14.6', '2Tim.3.16', 'Isa.41.10',

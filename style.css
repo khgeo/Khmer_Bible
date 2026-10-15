@@ -38,7 +38,7 @@
 html,body{margin:0;transition:background .25s,color .25s;background:var(--bg);color:var(--text);font-family:var(--km);font-size:15px}
 a{color:var(--link)}
 .muted{color:var(--muted)}
-header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;padding:18px 20px 8px}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;padding:18px 20px 8px;position:sticky;top:0;z-index:1100;background:var(--bg);transition:background .25s,box-shadow .2s}
 h1{margin:0;font-weight:600;font-size:26px;letter-spacing:.2px}
 .title p{margin:2px 0 0;color:var(--muted);font-size:13px}
 #search{display:flex;gap:6px}
@@ -56,7 +56,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;min-height:60v
 #overlay{position:absolute;left:20px;top:0;cursor:crosshair}
 #tip{position:absolute;pointer-events:none;background:var(--tip);box-shadow:0 4px 16px rgba(0,0,0,.18);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;white-space:nowrap;z-index:2}
 #tip small{color:var(--muted)}
-#panel{border-left:1px solid var(--line);padding:12px 16px 24px;max-height:calc(100vh - 140px);overflow:auto;position:sticky;top:0}
+#panel{border-left:1px solid var(--line);padding:12px 16px 24px;max-height:calc(100vh - 140px);overflow:auto;position:sticky;top:var(--hdr,0px)}
 #status{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:10px}
 #status .dot{width:8px;height:8px;border-radius:50%;background:#c9a23a;animation:pulse 1.2s infinite}
 #status.ok .dot{background:#5fd38a;animation:none}
@@ -135,3 +135,20 @@ nav a:hover{color:var(--text)}
 .vcredit{font-size:12px;color:var(--muted);padding:8px 14px}
 .vcredit a{text-decoration:none}
 .vfail{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;background:#000;font-size:14px;text-align:center;padding:20px}.vfail a{color:#9fd3ff}
+
+/* sticky header: stays on screen; shrinks to title + menu once you scroll down */
+html{scroll-padding-top:calc(var(--hdr,0px) + 8px)}
+body.compact header{padding-top:6px;padding-bottom:6px;align-items:center;box-shadow:0 1px 0 var(--line),0 6px 16px rgba(0,0,0,.06)}
+body.compact header h1{font-size:17px}
+body.compact header .title p,body.compact header .theme,body.compact header #status{display:none}
+body.compact header nav{margin-top:4px}
+body.compact .hdr-right{gap:0}
+@media (max-width:700px){
+  body.compact header{gap:4px 12px;padding-left:12px;padding-right:12px}
+  body.compact header .title{min-width:0;width:100%}
+  body.compact header h1{font-size:15px}
+  body.compact header nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  body.compact header nav::-webkit-scrollbar{display:none}
+  body.compact header nav a{flex:none}
+  body.compact .hdr-right{display:none}
+}
