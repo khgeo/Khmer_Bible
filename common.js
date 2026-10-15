@@ -182,7 +182,7 @@ const Stats = (() => {
   }
 
   // backup / restore everything this site keeps about your reading
-  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme', 'kb-hl', 'kb-plan', 'kb-journal'];
+  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme', 'kb-hl', 'kb-plan', 'kb-journal', 'kb-prayers'];
   function exportJSON() {
     const out = { app: 'khmer-bible', v: 1, at: new Date().toISOString() };
     for (const k of KEYS) { try { const v = localStorage.getItem(k); if (v != null) out[k] = v; } catch (e) {} }
@@ -197,7 +197,7 @@ const Stats = (() => {
     let rd = []; try { rd = JSON.parse(inc['kb-read'] || '[]'); } catch (e) {}
     try { localStorage.setItem('kb-read', JSON.stringify([...new Set([...Reading.read(), ...rd])])); } catch (e) {}
     // highlights and journal: merge, keeping the newer entry for the same verse/day
-    for (const k of ['kb-hl', 'kb-journal']) {
+    for (const k of ['kb-hl', 'kb-journal', 'kb-prayers']) {
       let cur = {}, add = {}; try { cur = JSON.parse(localStorage.getItem(k) || '{}'); add = JSON.parse(inc[k] || '{}'); } catch (e) {}
       for (const [id, v] of Object.entries(add)) if (!cur[id] || (v.t || 0) >= (cur[id].t || 0)) cur[id] = v;
       try { localStorage.setItem(k, JSON.stringify(cur)); } catch (e) {}
@@ -331,7 +331,7 @@ const Journal = {
 const Videos = (() => {
   let p = null;
   const load = () => p || (p = fetch('data/videos.json').then(r => r.json()).catch(() => ({ videos: [] })));
-  const thumb = v => v.yt ? `https://i.ytimg.com/vi/${v.yt}/mqdefault.jpg` : 'assets/icon.svg';
+  const thumb = v => v.yt ? `https://i.ytimg.com/vi/${v.yt}/mqdefault.jpg` : v.mux ? `https://image.mux.com/${v.mux}/thumbnail.jpg?width=480` : 'assets/icon.svg';
   // overviews covering a chapter (global chapter index → book index + chapter number)
   async function forChapter(B, c) {
     const d = await load(), bi = B.chBook[c], n = B.chNum[c];
@@ -345,7 +345,7 @@ const Videos = (() => {
   // click-to-play modal; youtube-nocookie keeps YouTube from setting cookies until play
   function play(v) {
     track('video-play');
-    if (!v.yt) { window.open('https://bibleproject.com/km/', '_blank', 'noopener'); return; }
+    if (!v.yt && !v.mux) { window.open('https://bibleproject.com/km/', '_blank', 'noopener'); return; }
     let m = document.getElementById('vmodal');
     if (!m) {
       m = document.createElement('div'); m.id = 'vmodal';
@@ -359,10 +359,31 @@ const Videos = (() => {
       document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     }
     m.querySelector('.vhead b').textContent = v.t;
-    m.querySelector('.vyt').href = `https://www.youtube.com/watch?v=${v.yt}`;
+    const yt = m.querySelector('.vyt'); yt.style.display = v.yt ? '' : 'none'; if (v.yt) yt.href = `https://www.youtube.com/watch?v=${v.yt}`;
+    // BibleProject's own video file (Mux) when their YouTube link is broken
+    if (!v.yt) { muxPlay(m, v); m.classList.add('on'); return; }
     m.querySelector('.vframe').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${v.yt}?autoplay=1&rel=0" title="${esc(v.t)}"
       allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
     m.classList.add('on');
+  }
+  // Mux: HLS stream (native on Safari/iOS/Android, hls.js elsewhere) → MP4 rendition → BibleProject's site
+  let hlsLib = null;
+  function muxPlay(m, v) {
+    const fr = m.querySelector('.vframe'), hls = `https://stream.mux.com/${v.mux}.m3u8`, mp4 = `https://stream.mux.com/${v.mux}/high.mp4`;
+    fr.innerHTML = `<video poster="${thumb(v)}" controls autoplay playsinline title="${esc(v.t)}"></video>`;
+    const vid = fr.querySelector('video');
+    const fail = () => { fr.innerHTML = `<div class="vfail"><p>មិនអាចចាក់វីដេអូនេះនៅទីនេះបានទេ។</p><a href="https://bibleproject.com/km/" target="_blank" rel="noopener">មើលនៅ bibleproject.com/km ›</a></div>`; };
+    const toMp4 = () => { if (!vid.isConnected) return; vid.onerror = fail; vid.src = mp4; vid.play().catch(() => {}); };
+    if (vid.canPlayType('application/vnd.apple.mpegurl')) { vid.onerror = toMp4; vid.src = hls; return; }
+    hlsLib = hlsLib || new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js'; sc.onload = () => ok(window.Hls); sc.onerror = no; document.head.appendChild(sc); });
+    hlsLib.then(Hls => {
+      if (!vid.isConnected) return;
+      if (!Hls || !Hls.isSupported()) return toMp4();
+      const h = new Hls(); h.loadSource(hls); h.attachMedia(vid);
+      h.on(Hls.Events.MANIFEST_PARSED, () => vid.play().catch(() => {}));
+      h.on(Hls.Events.ERROR, (e, d) => { if (d.fatal) { h.destroy(); toMp4(); } });
+      new MutationObserver((_, o) => { if (!vid.isConnected) { h.destroy(); o.disconnect(); } }).observe(fr, { childList: true });
+    }, toMp4);
   }
   function bind(root, list) { root.querySelectorAll('.vcard').forEach(b => b.onclick = () => play(list[+b.dataset.vi])); }
   return { load, forChapter, forQuestion, card, play, bind, thumb };

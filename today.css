@@ -78,3 +78,8 @@ details.past summary{cursor:pointer;font-size:13px;color:var(--link)}
 .hli .note{margin-top:6px;padding:6px 10px;background:var(--panel);border-radius:6px;font:14px/1.8 var(--verse)}
 header #status{margin:0}
 @media (max-width:900px){.todaymain{grid-template-columns:minmax(0,1fr);padding:6px 10px 24px}.card{padding:14px}}
+
+.praybox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--panel);font-size:13px}
+.praybox a{text-decoration:none}
+.praybox .pgo{background:var(--btn);color:var(--btn-text);border-radius:10px;padding:7px 14px;font-weight:600;font-size:14px}
+.praybox .pgo small{font-weight:400;opacity:.7}

@@ -45,12 +45,23 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - In the reader, verses used by an answer show a small **?** and the verse toolbar lists those questions.
 - Source: `scripts/qa_source.py` (easy to edit and extend). Rebuild with `python3 scripts/build_qa.py --bible KhmerBFBSBible.xml` — every reference is validated against the Khmer versification (e.g. Micah 5:2 in English = មីកា ៥:១ in ពគប). **Please have a pastor or Bible teacher review the answers before wide publication;** readers can suggest questions or corrections through GitHub Issues.
 
+## Prayer (`prayer.html`)
+
+- **How to pray** — the A·C·T·S pattern (Adoration, Confession, Thanksgiving, Supplication) with verses and short sample prayers, plus 8 short tips.
+- **Guided prayer** — a step-by-step overlay (be still → A → C → T → S → the Lord's Prayer) with an optional 1/2/3-minute gentle timer per step. Link: `prayer.html#guided`.
+- **The Lord's Prayer** line by line (ម៉ាថាយ ៦:៩–១៣), with a short explanation of each line.
+- **Pray for…** — 24 topics (morning, anxiety, the sick, grief, family, students, work, Cambodia and its leaders, friends who don't know God, …), each with verses to pray and a sample prayer that can be copied, shared or added to your list. Link: `prayer.html#topic-anxiety`.
+- **Prayers in the Bible** — 25 prayers (Hannah, Solomon, Nehemiah, Daniel, Jonah, Mary, Gethsemane, John 17, Paul's prayers…) shown live from ពគប.
+- **My prayer list** — private requests (stored only in this browser, key `kb-prayers`): mark “I prayed today”, record when and how God answered. Included in the reader's backup/restore.
+- Source: `scripts/prayer_source.py`; rebuild with `python3 scripts/build_prayer.py` (validates every reference against the Khmer versification, e.g. Jonah's prayer is យ៉ូណាស ២:២–១០ in ពគប). Sample prayers are simple starting points — please have a pastor review them.
+
 ## Videos (`videos.html`)
 - All **85 Khmer videos from [BibleProject](https://bibleproject.com/km/)** — 41 Old Testament and 32 New Testament book overviews and 12 themes — in a searchable gallery.
 - Each book overview is mapped to the chapters it explains, so the **reader shows the right video beside every chapter** (e.g. លោកុប្បត្តិ ១២–៥០ for Genesis 15, រ៉ូម ៥–១៦ for Romans 8). Theme videos appear under related **Q&A answers** (Holy Spirit, holiness, covenants, sacrifice and atonement, justice…).
 - Videos are **embedded from BibleProject's own YouTube channel** (privacy-enhanced `youtube-nocookie.com`, click-to-play), never re-uploaded or edited, with the credit BibleProject asks for — *"BibleProject is the author and owner of this content"* — and a link back to bibleproject.com/km. This follows their [sharing guidelines](https://help.bibleproject.com/hc/en-us/articles/4479161296151-What-are-the-basic-guidelines-when-sharing-BibleProject-content); the site must stay free (no profit from their content).
 - The Genesis 12–50 video's link on BibleProject's Khmer page is malformed (10-character YouTube id), so that card opens bibleproject.com/km instead. Rebuild the index with `python3 scripts/build_videos.py` when they add videos.
 
+- A few videos have no working YouTube ID on BibleProject's site (e.g. Genesis 12–50); those play in the same pop-up from BibleProject's own video server (Mux), set in `MUX` in `scripts/build_videos.py`.
 ## Map (`maps.html`)
 - 1,278 Bible places from OpenBible.info's geocoding data, sized by how many verses mention them and coloured by type; dashed circles mark uncertain locations.
 - 352 places carry their **Khmer ពគប name**, matched against the text (verified list in `scripts/km_place_names.json` plus automatic matching).
@@ -92,6 +103,7 @@ python3 scripts/build_data.py --xref cross_references.txt --bible KhmerBFBSBible
 # Bible-Geocoding-Data: https://github.com/openbibleinfo/Bible-Geocoding-Data
 python3 scripts/build_places.py --geo Bible-Geocoding-Data --bible KhmerBFBSBible.xml
 python3 scripts/build_qa.py --bible KhmerBFBSBible.xml
+python3 scripts/build_prayer.py
 ```
 The XML is used only for chapter/verse structure. References with zero or negative votes are dropped; 218 that point outside the Khmer versification are skipped.
 
@@ -103,8 +115,10 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `read.html`, `read.js`, `read.css` | Reader |
 | `today.html`, `today.js`, `today.css` | Devotional, reading plans, highlights |
 | `qa.html`, `qa.js`, `qa.css` | Questions & answers |
+| `prayer.html`, `prayer.js`, `prayer.css` | Prayer guide, topics, Bible prayers, private prayer list |
 | `videos.html`, `data/videos.json` | BibleProject Khmer videos, mapped to chapters and questions |
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
+| `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Optional devotional texts by date (empty by default) |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
 | `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |

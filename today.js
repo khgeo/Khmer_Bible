@@ -49,11 +49,17 @@ function renderDevo() {
       <a href="read.html#${B.ref(r.c, r.g)}">អានជំពូកទាំងមូល ›</a> · <a href="./#${B.ref(r.c, r.g)}">ខ្សែសម្ពន្ធ ›</a></details>` : ''}
     <h3>កំណត់ហេតុរបស់ខ្ញុំ <small class="muted">· រក្សាទុកដោយស្វ័យប្រវត្តិ</small></h3>
     ${prompts.map(([f, t, ph]) => `<label class="jq"><span>${t}</span><textarea data-f="${f}" rows="2" placeholder="${ph}">${esc(j[f] || '')}</textarea></label>`).join('')}
-    <div class="jfoot"><span class="muted tiny" id="saved"></span>${pastJournal()}</div>`;
+    <div class="jfoot"><span class="muted tiny" id="saved"></span>${pastJournal()}</div>
+    ${prayBox()}`;
   $('#devo').querySelectorAll('textarea').forEach(ta => ta.oninput = () => {
     Journal.set(k, ta.dataset.f, ta.value); Journal.set(k, 'ref', ref); Journal.set(k, 't', Date.now());
     $('#saved').textContent = 'បានរក្សាទុក ✓';
   });
+}
+function prayBox() {
+  let n = 0; try { n = Object.values(JSON.parse(localStorage.getItem('kb-prayers') || '{}')).filter(x => !x.del && !x.a).length; } catch (e) {}
+  return `<div class="praybox"><a class="pgo" href="prayer.html#guided">🙏 អធិស្ឋានជាមួយការណែនាំ <small>A·C·T·S</small></a>
+    <a href="prayer.html#list">${n ? `សំណូម ${kmNum(n)} កំពុងរង់ចាំ ›` : 'បញ្ជីអធិស្ឋានរបស់ខ្ញុំ ›'}</a> · <a href="prayer.html#topics">អធិស្ឋានសំរាប់… ›</a></div>`;
 }
 function pastJournal() {
   const all = Journal.all(), keys = Object.keys(all).filter(k => k !== Stats.dayKey()).sort().reverse();

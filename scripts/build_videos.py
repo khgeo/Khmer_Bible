@@ -107,11 +107,16 @@ out, bad = [], []
 def check_id(v):
     if not re.fullmatch(r"[A-Za-z0-9_-]{11}", v): bad.append(v); return False
     return True
+# BibleProject's own video host (Mux) — used when their YouTube link is broken.
+# Playback id taken from the official download link on bibleproject.com/km.
+MUX = {"JA3W3CfyHM": "02hYmobQRSH00OZSinOgQU02vmeKHAD1MuUATGBQBEL1h8"}
 for grp, rows in (("ot", OT), ("nt", NT)):
     for yt, title, spans in rows:
         for b, a, z in spans: assert b in nch and 1 <= a <= z <= nch[b], (title, b, a, z)
         ok = check_id(yt)
-        out.append({"yt": yt if ok else None, "t": title, "g": grp, "s": [[osis.index(b), a, z] for b, a, z in spans]})
+        v = {"yt": yt if ok else None, "t": title, "g": grp, "s": [[osis.index(b), a, z] for b, a, z in spans]}
+        if yt in MUX: v["mux"] = MUX[yt]
+        out.append(v)
 for yt, title, cats, topics, refs in THEMES:
     ok = check_id(yt)
     qs = [x["id"] for x in qa if x["c"] in cats and any(t.lower() in x["en"].lower() for t in topics)]
@@ -119,7 +124,7 @@ for yt, title, cats, topics, refs in THEMES:
 json.dump({"source": "https://bibleproject.com/km/", "credit": "BibleProject is the author and owner of this content.", "videos": out},
           open(os.path.join(root, "data", "videos.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"{len(out)} videos ({sum(v['g']=='ot' for v in out)} OT, {sum(v['g']=='nt' for v in out)} NT, {sum(v['g']=='theme' for v in out)} themes)")
-print("invalid YouTube ids (linked to bibleproject.com instead):", bad)
+print("invalid YouTube ids:", bad, "→ played from BibleProject's Mux host:", [k for k in bad if k in MUX])
 covered = set()
 for v in out:
     for bi, a, z in v.get("s", []): covered.add(bi)

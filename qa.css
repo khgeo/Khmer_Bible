@@ -45,3 +45,4 @@ header #status{margin:0}
   #cats button{flex:none}
 }
 .qvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,260px));gap:12px}
+.pbanner{display:block;margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--vsel);border:1px solid var(--accent);text-decoration:none;color:var(--text);font-size:14px;line-height:1.8}

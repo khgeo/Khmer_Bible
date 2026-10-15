@@ -56,6 +56,7 @@ function render() {
   const list = QA.items.filter(it => (!UI.cat || it.c === UI.cat) && matches(it, UI.q));
   const cat = c => QA.cats.find(x => x.id === c);
   let h = `<div class="count">${kmNum(list.length)} សំណួរ${UI.q ? ` សំរាប់ «${esc(UI.q)}»` : ''}${UI.cat ? ` · ${esc(cat(UI.cat).km)}` : ''}</div>`;
+  if (UI.cat === 'prayer') h += `<a class="pbanner" href="prayer.html">🙏 <b>ទំព័រអធិស្ឋាន</b> — របៀបអធិស្ឋាន · សេចក្ដីអធិស្ឋានក្នុងព្រះគម្ពីរ · អធិស្ឋានសំរាប់សេចក្ដីត្រូវការផ្សេងៗ ›</a>`;
   if (!list.length) h += `<p class="muted">រកមិនឃើញ។ <a href="https://github.com/khgeo/Khmer_Bible/issues/new" target="_blank" rel="noopener">ស្នើសំណួរនេះ ›</a></p>`;
   for (const it of list.slice(0, UI.shown)) {
     const open = UI.open.has(it.id);
