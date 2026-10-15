@@ -135,6 +135,7 @@ const Reading = {
   markRead(c) {
     const s = Reading.read();
     Stats.finished(c);                       // counts toward today, even when re-reading
+    track('finished-chapter');
     if (s.has(c)) return s; s.add(c);
     try { localStorage.setItem('kb-read', JSON.stringify([...s])); } catch (e) {}
     return s;
@@ -236,4 +237,10 @@ const VOTD = ['John.3.16', 'Ps.23.1', 'Rom.8.28', 'Phil.4.13', 'Jer.29.11', 'Isa
 function votdRef(d = new Date()) {
   const day = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
   return VOTD[day % VOTD.length];
+}
+
+// ---------- anonymous site analytics (GoatCounter: no cookies, no personal data) ----------
+// Only counts *how often* something happens site-wide — never who did it.
+function track(name, title) {
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: title || name, event: true }); } catch (e) {}
 }

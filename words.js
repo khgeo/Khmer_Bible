@@ -47,6 +47,7 @@ function fromHash(initial) {
   if (TEXT) run();
 }
 function submit() {
+  track('word-search');
   const m = document.querySelector('[name=mode]:checked').value;
   const h = '#' + new URLSearchParams({ q: $('#w').value.trim(), m });
   if (location.hash !== h) location.hash = h; else run();

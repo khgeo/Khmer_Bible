@@ -125,6 +125,7 @@ function selectPlace(i, fly) {
 
 // ---------- play through the Bible ----------
 function startPlay() {
+  track('map-play');
   let bi = S.book >= 0 && S.chap < 0 ? S.book : 0;
   $('#play').textContent = '■ ឈប់'; $('#play').classList.add('on');
   const step = () => {

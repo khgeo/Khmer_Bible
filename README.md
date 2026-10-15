@@ -45,6 +45,12 @@ The Khmer text is **not stored in this repo**. On first visit the browser fetche
 
 To use another source, open the page with `?text=<url-to-xml>` (same Beblia XML format), or edit `TEXT_SOURCES` at the top of `app.js`.
 
+## Visitor statistics (owner)
+Anonymous site-wide counts via [GoatCounter](https://khgeo.goatcounter.com) — no cookies, no personal data, no consent banner needed. Dashboard: https://khgeo.goatcounter.com
+- Page views, unique visitors, returning visits, countries, devices and referrers per page.
+- Events: `finished-chapter`, `word-search`, `map-play`, `copy-verse` — counts only; no chapter, search word or reader identity is sent.
+- Visits from `localhost` are not counted. To remove tracking, delete the `gc.zgo.at` script line at the bottom of each `.html` page.
+
 ## Publish on GitHub Pages
 1. Create a repository (e.g. `khgeo/khmer-bible-arcs`) and push these files to `main`.
 2. Settings → Pages → *Deploy from a branch* → `main` / root.

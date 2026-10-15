@@ -117,6 +117,7 @@ function xbox(g, arr) {
     }).join('') + (refs.length > 12 ? `<a class="sm" href="./#${B.ref(B.verseCh[g], g)}">+ ${kmNum(refs.length - 12)} ទៀត ក្នុងទំព័រធ្នូ ›</a>` : '') + '</div>';
 }
 function copyVerse(g, btn) {
+  track('copy-verse');
   const s = `${TEXT[g]}\n— ${B.label(g)} (ពគប ១៩៥៤)`;
   (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(() => { btn.textContent = 'បានចម្លង ✓'; }, () => { btn.textContent = 'មិនអាចចម្លង'; });
 }
