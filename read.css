@@ -138,3 +138,11 @@ a.place:hover{color:var(--accent)}
 .tbox .tqa b{font-size:12px;color:var(--accent)}
 .tbox .tqa a{text-decoration:none}
 #vids{display:grid;gap:12px}
+.v .qam.on{background:var(--accent);color:var(--bg)}
+.qabox{display:block;margin:6px 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--panel);font:14px/1.8 var(--km)}
+.qabox .qai{display:flex;flex-direction:column;gap:1px;padding:8px 10px;margin:6px 0;border-radius:8px;background:var(--bg);border:1px solid var(--line);text-decoration:none;color:var(--text)}
+.qabox .qai:hover{border-color:var(--accent)}
+.qabox .qq{font-weight:600;font-size:14.5px}
+.qabox .qa{font:13.5px/1.85 var(--verse);color:var(--muted)}
+.qabox .go{font-size:12px;color:var(--link)}
+.qabox .sm{font-size:12.5px;text-decoration:none}

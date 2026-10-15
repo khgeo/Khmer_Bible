@@ -3,7 +3,7 @@
 
 let B, P, TEXT = null, mini = null, miniLayer = null;
 const XREF = new Map(), QAIDX = {};
-const S = { c: 0, g: -1, open: -1, tool: -1, at: Date.now() };
+const S = { c: 0, g: -1, open: -1, tool: -1, qa: -1, at: Date.now() };
 let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
 
 (async function init() {
@@ -99,22 +99,30 @@ async function render(scroll) {
       const n = cnt.get(g) || 0, hl = HL[g];
       h += `<span class="v${g === S.g ? ' sel' : ''}${hl && hl.c ? ' hl-' + hl.c : ''}${g === S.tool ? ' tooling' : ''}" id="g${g}" data-g="${g}"><sup>${kmNum(g - v0 + 1)}</sup>${t}` +
         (hl && hl.n ? `<button class="nt" data-t="${g}" title="${esc(hl.n)}">✎</button>` : '') +
-        (QAIDX[g] ? `<a class="qam" href="qa.html#${QAIDX[g][0].id}" title="${esc(QAIDX[g].map(x => x.q).join(' · '))}">?</a>` : '') +
+        (QAIDX[g] ? `<a class="qam${g === S.qa ? ' on' : ''}" href="qa.html#${QAIDX[g][0].id}" data-q="${g}" title="${esc(QAIDX[g].map(x => x.q).join(' · '))}" aria-expanded="${g === S.qa}">?</a>` : '') +
         `${n ? `<button class="xr" data-x="${g}" title="${n} cross-references">${kmNum(n)}</button>` : ''} </span>`;
+      if (g === S.qa && QAIDX[g]) h += qabox(g);
       if (g === S.tool) h += toolbox(g, hl);
       if (g === S.open) h += xbox(g, arr);
     }
     h += '</div>';
   }
   $('#text').innerHTML = h;
-  $('#text').querySelectorAll('.xr').forEach(b => b.onclick = e => { e.stopPropagation(); const g = +b.dataset.x; S.open = S.open === g ? -1 : g; render(false); });
+  $('#text').querySelectorAll('.xr').forEach(b => b.onclick = e => { e.stopPropagation(); const g = +b.dataset.x; S.open = S.open === g ? -1 : g; S.qa = -1; render(false); });
+  // "?" marker: first tap previews the questions under the verse, second tap opens the Q&A page
+  $('#text').querySelectorAll('.qam').forEach(a => a.onclick = e => {
+    e.stopPropagation(); const g = +a.dataset.q;
+    if (S.qa === g) return; // second tap: follow the link
+    e.preventDefault(); S.qa = g; S.tool = -1; S.open = -1; render(false);
+  });
+  $('#text').querySelectorAll('.qabox [data-close]').forEach(b => b.onclick = e => { e.stopPropagation(); S.qa = -1; render(false); });
   $('#text').querySelectorAll('.place').forEach(a => a.onclick = e => { e.stopPropagation(); });
   $('#text').querySelectorAll('.xbox [data-go]').forEach(a => a.onclick = () => go(B.verseCh[+a.dataset.go], +a.dataset.go));
   $('#text').querySelectorAll('.xbox [data-copy]').forEach(b => b.onclick = () => copyVerse(+b.dataset.copy, b));
   // tap a verse → highlight / note / copy / share toolbar
   $('#text').querySelectorAll('.v').forEach(el => el.onclick = e => {
     if (e.target.closest('a,button') || String(getSelection()).length > 2) return;
-    const g = +el.dataset.g; S.tool = S.tool === g ? -1 : g; S.open = -1; render(false);
+    const g = +el.dataset.g; S.tool = S.tool === g ? -1 : g; S.open = -1; S.qa = -1; render(false);
   });
   $('#text').querySelectorAll('.nt').forEach(b => b.onclick = e => { e.stopPropagation(); const g = +b.dataset.t; S.tool = g; S.open = -1; render(false); });
   bindToolbox();
@@ -135,6 +143,13 @@ function xbox(g, arr) {
       let tx = ''; for (let k = t; k <= Math.min(e, t + 2); k++) tx += (k > t ? ' ' : '') + esc(TEXT[k] || '');
       return `<div class="xr-item" data-go="${t}"><span class="lbl">${esc(B.label(t))}${e > t ? '–' + kmNum(B.vNum(e)) : ''}<i>▲ ${kmNum(v)}</i></span><span class="tx">${tx}${e > t + 2 ? ' …' : ''}</span></div>`;
     }).join('') + (refs.length > 12 ? `<a class="sm" href="./#${B.ref(B.verseCh[g], g)}">+ ${kmNum(refs.length - 12)} ទៀត ក្នុងទំព័រធ្នូ ›</a>` : '') + '</div>';
+}
+function qabox(g) {
+  const qs = QAIDX[g], cut = t => t.length > 140 ? t.slice(0, 140).replace(/\s\S*$/, '') + '…' : t;
+  return `<div class="qabox"><div class="xhead"><b>សំណួរដែលប្រើ ${esc(B.label(g))}</b><button data-close aria-label="បិទ">✕</button></div>` +
+    qs.slice(0, 5).map(it => `<a class="qai" href="qa.html#${it.id}"><span class="qq">${esc(it.q)}</span><span class="qa">${esc(cut(it.a))}</span><span class="go">អានចម្លើយ និងខគម្ពីរ ›</span></a>`).join('') +
+    (qs.length > 5 ? `<a class="sm" href="qa.html#${qs[0].id}">+ ${kmNum(qs.length - 5)} សំណួរទៀត ›</a>` : '') +
+    `<div class="muted tiny">ចុច <b>?</b> ម្ដងទៀត ដើម្បីបើកសំណួរទីមួយ</div></div>`;
 }
 function toolbox(g, hl) {
   return `<div class="tbox" data-g="${g}"><div class="trow"><b>${esc(B.label(g))}</b>
