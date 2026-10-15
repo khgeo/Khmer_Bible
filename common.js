@@ -182,7 +182,7 @@ const Stats = (() => {
   }
 
   // backup / restore everything this site keeps about your reading
-  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme'];
+  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme', 'kb-hl', 'kb-plan', 'kb-journal'];
   function exportJSON() {
     const out = { app: 'khmer-bible', v: 1, at: new Date().toISOString() };
     for (const k of KEYS) { try { const v = localStorage.getItem(k); if (v != null) out[k] = v; } catch (e) {} }
@@ -196,9 +196,16 @@ const Stats = (() => {
     save(days);
     let rd = []; try { rd = JSON.parse(inc['kb-read'] || '[]'); } catch (e) {}
     try { localStorage.setItem('kb-read', JSON.stringify([...new Set([...Reading.read(), ...rd])])); } catch (e) {}
+    // highlights and journal: merge, keeping the newer entry for the same verse/day
+    for (const k of ['kb-hl', 'kb-journal']) {
+      let cur = {}, add = {}; try { cur = JSON.parse(localStorage.getItem(k) || '{}'); add = JSON.parse(inc[k] || '{}'); } catch (e) {}
+      for (const [id, v] of Object.entries(add)) if (!cur[id] || (v.t || 0) >= (cur[id].t || 0)) cur[id] = v;
+      try { localStorage.setItem(k, JSON.stringify(cur)); } catch (e) {}
+    }
+    if (inc['kb-plan'] && !localStorage.getItem('kb-plan')) try { localStorage.setItem('kb-plan', inc['kb-plan']); } catch (e) {}
     for (const k of ['kb-last', 'kb-goal', 'kb-fs']) if (inc[k] != null) try { localStorage.setItem(k, inc[k]); } catch (e) {}
   }
-  function reset() { for (const k of ['kb-days', 'kb-read', 'kb-last']) try { localStorage.removeItem(k); } catch (e) {} }
+  function reset() { for (const k of ['kb-days', 'kb-read', 'kb-last', 'kb-plan']) try { localStorage.removeItem(k); } catch (e) {} }
   return { dayKey, addDays, addTime, finished, goal, setGoal, summary, exportJSON, importJSON, reset, active };
 })();
 
@@ -244,3 +251,78 @@ function votdRef(d = new Date()) {
 function track(name, title) {
   try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: title || name, event: true }); } catch (e) {}
 }
+
+// ---------- verse highlights & notes (this browser only) ----------
+// kb-hl = { "<global verse index>": { c: "y|g|b|p", n: "note", t: timestamp } }
+const HL_COLORS = [['y', 'លឿង'], ['g', 'បៃតង'], ['b', 'ខៀវ'], ['p', 'ផ្កាឈូក']];
+const Highlights = {
+  all() { try { return JSON.parse(localStorage.getItem('kb-hl') || '{}') || {}; } catch (e) { return {}; } },
+  get(g) { return Highlights.all()[g] || null; },
+  set(g, patch) {
+    const a = Highlights.all(), cur = a[g] || {}, nx = Object.assign({}, cur, patch, { t: Date.now() });
+    if (!nx.c && !(nx.n && nx.n.trim())) delete a[g]; else a[g] = nx;
+    try { localStorage.setItem('kb-hl', JSON.stringify(a)); } catch (e) {}
+  },
+  remove(g) { const a = Highlights.all(); delete a[g]; try { localStorage.setItem('kb-hl', JSON.stringify(a)); } catch (e) {} },
+};
+
+// ---------- reading plans ----------
+// Each plan is one or more "tracks" (a list of chapters spread over N days). Chapters are
+// assigned to days by verse count, so long chapters (Ps 119) don't make one day huge.
+const PLAN_DEFS = [
+  { id: 'bible1y', km: 'ព្រះគម្ពីរទាំងមូល ក្នុងមួយឆ្នាំ', en: 'Whole Bible in a year', days: 365, d: 'សញ្ញាចាស់ និងសញ្ញាថ្មី អានស្របគ្នារាល់ថ្ងៃ (~១៥ នាទី)',
+    tracks: B => [[range(0, B.OT_CH)], [range(B.OT_CH, B.NC)]] },
+  { id: 'nt90', km: 'គម្ពីរសញ្ញាថ្មី ក្នុង ៩០ ថ្ងៃ', en: 'New Testament in 90 days', days: 90, d: 'ម៉ាថាយ ដល់ វិវរណៈ · ប្រហែល ៣ ជំពូកក្នុងមួយថ្ងៃ',
+    tracks: B => [[range(B.OT_CH, B.NC)]] },
+  { id: 'gospels30', km: 'ដំណឹងល្អទាំងបួន ក្នុង ៣០ ថ្ងៃ', en: 'The four Gospels in 30 days', days: 30, d: 'ម៉ាថាយ ម៉ាកុស លូកា យ៉ូហាន',
+    tracks: B => [[range(B.bookFirstCh[39], B.bookFirstCh[43])]] },
+  { id: 'wisdom60', km: 'ទំនុកដំកើង និង សុភាសិត ក្នុង ៦០ ថ្ងៃ', en: 'Psalms & Proverbs in 60 days', days: 60, d: 'ទំនុកដំកើង ២–៣ ជំពូក និង សុភាសិត ១ ជំពូក រាល់ថ្ងៃ',
+    tracks: B => [[range(B.bookFirstCh[18], B.bookFirstCh[19])], [range(B.bookFirstCh[19], B.bookFirstCh[20]), 31]] },
+];
+function range(a, b) { return Array.from({ length: b - a }, (_, i) => a + i); }
+const Plans = {
+  defs: PLAN_DEFS,
+  build(B, id) {
+    const def = PLAN_DEFS.find(p => p.id === id); if (!def) return null;
+    const days = Array.from({ length: def.days }, () => []);
+    for (const [chs, nd = def.days] of def.tracks(B)) {
+      const w = chs.map(c => B.chFirst[c + 1] - B.chFirst[c]), tot = w.reduce((a, b) => a + b, 0);
+      let cum = 0;
+      chs.forEach((c, i) => { const d = Math.min(nd - 1, Math.floor((cum + w[i] / 2) / tot * nd)); days[d].push(c); cum += w[i]; });
+    }
+    return Object.assign({}, def, { portions: days });
+  },
+  state() { try { return JSON.parse(localStorage.getItem('kb-plan') || 'null'); } catch (e) { return null; } },
+  start(id) { try { localStorage.setItem('kb-plan', JSON.stringify({ id, start: Stats.dayKey(), ticks: [] })); } catch (e) {} track('plan-start'); },
+  stop() { try { localStorage.removeItem('kb-plan'); } catch (e) {} },
+  tick(day, on) {
+    const s = Plans.state(); if (!s) return; const t = new Set(s.ticks || []); on ? t.add(day) : t.delete(day); s.ticks = [...t];
+    try { localStorage.setItem('kb-plan', JSON.stringify(s)); } catch (e) {}
+  },
+  // chapters finished since the plan started (from the daily reading log)
+  finishedSince(start) {
+    const o = Stats.summary().o, set = new Set();
+    for (const [k, v] of Object.entries(o)) if (k >= start && v.l) v.l.forEach(c => set.add(c));
+    return set;
+  },
+  // full status: which day is "today", which days are done, what to read next
+  status(B) {
+    const s = Plans.state(); if (!s) return null;
+    const plan = Plans.build(B, s.id); if (!plan) return null;
+    const fin = Plans.finishedSince(s.start), ticks = new Set(s.ticks || []);
+    const done = plan.portions.map((p, i) => ticks.has(i) || (p.length > 0 && p.every(c => fin.has(c))));
+    const today = Math.min(plan.days - 1, Math.max(0, Math.round((new Date(Stats.dayKey() + 'T00:00:00') - new Date(s.start + 'T00:00:00')) / 864e5)));
+    const next = done.findIndex(d => !d);
+    const doneN = done.filter(Boolean).length;
+    const behind = today - done.slice(0, today).filter(Boolean).length; // unfinished days before today
+    return { s, plan, fin, done, today, next, doneN, behind, finished: next < 0 };
+  },
+};
+
+// ---------- devotional journal (per day, this browser only) ----------
+const Journal = {
+  all() { try { return JSON.parse(localStorage.getItem('kb-journal') || '{}') || {}; } catch (e) { return {}; } },
+  get(k) { return Journal.all()[k] || {}; },
+  set(k, field, val) { const a = Journal.all(); a[k] = Object.assign({}, a[k], { [field]: val }); if (!['o', 'a', 'p'].some(f => a[k][f] && String(a[k][f]).trim())) delete a[k];
+    try { localStorage.setItem('kb-journal', JSON.stringify(a)); } catch (e) {} },
+};

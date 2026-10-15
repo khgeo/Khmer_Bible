@@ -25,6 +25,17 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Private by design:** all of this stays in the reader's own browser (localStorage) and is never sent anywhere. «រក្សាទុកច្បាប់ចម្លង» downloads a backup file that can be restored («ស្ដារ») on another phone or computer; restoring merges with existing data.
 - **Verse of the day** (also on the arcs page).
 
+## Today (`today.html`)
+- **Daily devotional** — the verse of the day with its surrounding verses, plus a guided journal (ការសង្កេត · ការអនុវត្ត · ការអធិស្ឋាន — observation, application, prayer) saved per day; earlier entries stay readable below.
+- **Your own devotional texts:** add entries to `data/devotionals.json` and they replace the default on that date:
+  ```json
+  [{ "date": "12-25", "ref": "Luke.2.11", "title": "…", "body": "…", "prayer": "…", "author": "…" }]
+  ```
+  `date` is `MM-DD` (every year) or `YYYY-MM-DD` (one day). Only include texts you wrote or have permission to publish.
+- **Reading plans:** Whole Bible in a year (OT + NT each day), New Testament in 90 days, the four Gospels in 30 days, Psalms & Proverbs in 60 days. Chapters are spread by verse count so days are even. A day ticks itself off when you finish its chapters in the reader (or tick it by hand); a calendar shows done, missed and today, and you see how many days you are behind. The reader shows the plan's next chapter at the end of each chapter.
+- **Highlights & notes:** tap any verse in the reader to colour it (yellow, green, blue, pink), write a note, copy it or share a link. All highlights are listed on this page, filterable by colour or notes.
+- Journal, highlights and plan are included in the reading-data backup file.
+
 ## Map (`maps.html`)
 - 1,278 Bible places from OpenBible.info's geocoding data, sized by how many verses mention them and coloured by type; dashed circles mark uncertain locations.
 - 352 places carry their **Khmer ពគប name**, matched against the text (verified list in `scripts/km_place_names.json` plus automatic matching).
@@ -48,7 +59,7 @@ To use another source, open the page with `?text=<url-to-xml>` (same Beblia XML 
 ## Visitor statistics (owner)
 Anonymous site-wide counts via [GoatCounter](https://khgeo.goatcounter.com) — no cookies, no personal data, no consent banner needed. Dashboard: https://khgeo.goatcounter.com
 - Page views, unique visitors, returning visits, countries, devices and referrers per page.
-- Events: `finished-chapter`, `word-search`, `map-play`, `copy-verse` — counts only; no chapter, search word or reader identity is sent.
+- Events: `finished-chapter`, `word-search`, `map-play`, `copy-verse`, `highlight`, `plan-start` — counts only; no chapter, search word or reader identity is sent.
 - Visits from `localhost` are not counted. To remove tracking, delete the `gc.zgo.at` script line at the bottom of each `.html` page.
 
 ## Publish on GitHub Pages
@@ -74,6 +85,8 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `index.html`, `app.js` | Arc diagram page |
 | `words.html`, `words.js`, `words.css` | Word frequency page |
 | `read.html`, `read.js`, `read.css` | Reader |
+| `today.html`, `today.js`, `today.css` | Devotional, reading plans, highlights |
+| `data/devotionals.json` | Optional devotional texts by date (empty by default) |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
 | `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |
 | `data/places.json` | Places: names (Khmer/English), type, coordinates, confidence, verse indices |

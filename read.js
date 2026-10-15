@@ -3,7 +3,7 @@
 
 let B, P, TEXT = null, mini = null, miniLayer = null;
 const XREF = new Map();
-const S = { c: 0, g: -1, open: -1, at: Date.now() };
+const S = { c: 0, g: -1, open: -1, tool: -1, at: Date.now() };
 let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
 
 (async function init() {
@@ -30,11 +30,12 @@ let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
     clearTimeout(endTimer);
     if (!e.isIntersecting || !TEXT) return;
     const c = S.c, wait = Math.max(0, 6000 - (Date.now() - S.at));
-    endTimer = setTimeout(() => { if (c === S.c) { Reading.markRead(c); renderProgress(); renderStats(); } }, wait);
+    endTimer = setTimeout(() => { if (c === S.c) { Reading.markRead(c); renderProgress(); renderStats(); renderPlan(); renderPlanNext(); } }, wait);
   }), { threshold: 1 }).observe($('#end'));
   startReadingTimer();
   addEventListener('statsupdate', renderStats);
   renderStats();
+  renderPlan();
   Places.load(B).then(p => { P = p; render(); });
   route();
   KhmerText.load(B.meta).then(t => { TEXT = t; render(true); renderVotd(); }).catch(() => {});
@@ -50,7 +51,7 @@ function route() {
   if (!r) { const L = Reading.last(); r = L && B.parse(L.ref); }
   if (!r) r = { c: 0, g: -1 };
   if (r.c !== S.c) S.at = Date.now();
-  S.c = r.c; S.g = r.g; S.open = -1;
+  S.c = r.c; S.g = r.g; S.open = -1; S.tool = -1;
   syncBar();
   render(true);
 }
@@ -64,6 +65,7 @@ function syncBar() {
   pv.style.visibility = S.c > 0 ? '' : 'hidden'; nx.style.visibility = S.c < B.NC - 1 ? '' : 'hidden';
   if (S.c > 0) { pv.href = '#' + B.ref(S.c - 1, -1); pv.querySelector('span').textContent = B.chLabel(S.c - 1); }
   if (S.c < B.NC - 1) { nx.href = '#' + B.ref(S.c + 1, -1); nx.querySelector('span').textContent = B.chLabel(S.c + 1); }
+  renderPlanNext();
   document.title = `${B.chLabel(S.c)} — អានព្រះគម្ពីរ ពគប`;
 }
 
@@ -79,7 +81,7 @@ async function render(scroll) {
   const arr = await loadXref(B.chBook[c]);
   if (c !== S.c) return;
   const cnt = new Map(); for (let i = 0; i < arr.length; i += 4) if (arr[i] >= v0 && arr[i] < v1) cnt.set(arr[i], (cnt.get(arr[i]) || 0) + 1);
-  const pls = P ? P.byCh[c].map(x => P.list[x.i]) : [];
+  const pls = P ? P.byCh[c].map(x => P.list[x.i]) : [], HL = Highlights.all();
   let h = `<h2 class="chtitle"><small>${esc(B.book(c).en)} ${B.chNum[c]}</small>${esc(B.book(c).km)} <span>${kmNum(B.chNum[c])}</span></h2>`;
   if (!TEXT) h += '<p class="muted loading">កំពុងទាញយកអត្ថបទ ពគប…</p>';
   else {
@@ -87,8 +89,11 @@ async function render(scroll) {
     for (let g = v0; g < v1; g++) {
       let t = esc(TEXT[g] || '');
       for (const pl of pls) if (pl.re && pl.v.includes(g)) t = t.replace(pl.re, m => `<a class="place" href="maps.html#${B.ref(c, -1)}" data-p="${pl.i}" title="${esc(pl.en)} — មើលលើផែនទី">${m}</a>`);
-      const n = cnt.get(g) || 0;
-      h += `<span class="v${g === S.g ? ' sel' : ''}" id="g${g}" data-g="${g}"><sup>${kmNum(g - v0 + 1)}</sup>${t}${n ? `<button class="xr" data-x="${g}" title="${n} cross-references">${kmNum(n)}</button>` : ''} </span>`;
+      const n = cnt.get(g) || 0, hl = HL[g];
+      h += `<span class="v${g === S.g ? ' sel' : ''}${hl && hl.c ? ' hl-' + hl.c : ''}${g === S.tool ? ' tooling' : ''}" id="g${g}" data-g="${g}"><sup>${kmNum(g - v0 + 1)}</sup>${t}` +
+        (hl && hl.n ? `<button class="nt" data-t="${g}" title="${esc(hl.n)}">✎</button>` : '') +
+        `${n ? `<button class="xr" data-x="${g}" title="${n} cross-references">${kmNum(n)}</button>` : ''} </span>`;
+      if (g === S.tool) h += toolbox(g, hl);
       if (g === S.open) h += xbox(g, arr);
     }
     h += '</div>';
@@ -98,6 +103,13 @@ async function render(scroll) {
   $('#text').querySelectorAll('.place').forEach(a => a.onclick = e => { e.stopPropagation(); });
   $('#text').querySelectorAll('.xbox [data-go]').forEach(a => a.onclick = () => go(B.verseCh[+a.dataset.go], +a.dataset.go));
   $('#text').querySelectorAll('.xbox [data-copy]').forEach(b => b.onclick = () => copyVerse(+b.dataset.copy, b));
+  // tap a verse → highlight / note / copy / share toolbar
+  $('#text').querySelectorAll('.v').forEach(el => el.onclick = e => {
+    if (e.target.closest('a,button') || String(getSelection()).length > 2) return;
+    const g = +el.dataset.g; S.tool = S.tool === g ? -1 : g; S.open = -1; render(false);
+  });
+  $('#text').querySelectorAll('.nt').forEach(b => b.onclick = e => { e.stopPropagation(); const g = +b.dataset.t; S.tool = g; S.open = -1; render(false); });
+  bindToolbox();
   if (scroll) {
     if (S.g >= 0 && TEXT) { const el = document.getElementById('g' + S.g); el && el.scrollIntoView({ block: 'center' }); el && el.classList.add('flash'); }
     else window.scrollTo({ top: 0 });
@@ -115,6 +127,27 @@ function xbox(g, arr) {
       let tx = ''; for (let k = t; k <= Math.min(e, t + 2); k++) tx += (k > t ? ' ' : '') + esc(TEXT[k] || '');
       return `<div class="xr-item" data-go="${t}"><span class="lbl">${esc(B.label(t))}${e > t ? '–' + kmNum(B.vNum(e)) : ''}<i>▲ ${kmNum(v)}</i></span><span class="tx">${tx}${e > t + 2 ? ' …' : ''}</span></div>`;
     }).join('') + (refs.length > 12 ? `<a class="sm" href="./#${B.ref(B.verseCh[g], g)}">+ ${kmNum(refs.length - 12)} ទៀត ក្នុងទំព័រធ្នូ ›</a>` : '') + '</div>';
+}
+function toolbox(g, hl) {
+  return `<div class="tbox" data-g="${g}"><div class="trow"><b>${esc(B.label(g))}</b>
+    <span class="sw">${HL_COLORS.map(([k, l]) => `<button class="c-${k}${hl && hl.c === k ? ' on' : ''}" data-c="${k}" title="${l}" aria-label="គូស${l}"></button>`).join('')}
+    ${hl && hl.c ? '<button class="clr" data-c="" title="លុបពណ៌">✕</button>' : ''}</span>
+    <span class="acts"><button data-copy="${g}">ចម្លង</button><button data-share="${g}">តំណ</button><a href="./#${B.ref(B.verseCh[g], g)}">ធ្នូ ›</a></span></div>
+    <textarea placeholder="កំណត់ចំណាំរបស់អ្នក…" rows="2">${esc(hl && hl.n || '')}</textarea>
+    <div class="muted tiny">រក្សាទុកក្នុងកម្មវិធីរុករករបស់អ្នក · មើលទាំងអស់នៅទំព័រ <a href="today.html#highlights">ថ្ងៃនេះ</a></div></div>`;
+}
+function bindToolbox() {
+  const box = document.querySelector('.tbox'); if (!box) return;
+  const g = +box.dataset.g;
+  box.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Highlights.set(g, { c: b.dataset.c || undefined }); if (b.dataset.c) track('highlight'); render(false); });
+  box.querySelector('[data-copy]').onclick = e => copyVerse(g, e.target);
+  box.querySelector('[data-share]').onclick = e => {
+    const url = location.href.split('#')[0] + '#' + B.ref(B.verseCh[g], g);
+    (navigator.share ? navigator.share({ title: B.label(g), text: TEXT[g], url }) : navigator.clipboard.writeText(url)).then(() => { e.target.textContent = 'រួចរាល់ ✓'; }, () => {});
+  };
+  const ta = box.querySelector('textarea');
+  ta.oninput = () => Highlights.set(g, { n: ta.value });
+  ta.onblur = () => render(false);
 }
 function copyVerse(g, btn) {
   track('copy-verse');
@@ -175,10 +208,14 @@ function renderStats() {
   // heat-map: 26 weeks (Mon-first columns), today in the last column
   const WEEKS = 26, today = new Date(), dow = (today.getDay() + 6) % 7;
   const start = Stats.addDays(today, -(WEEKS - 1) * 7 - dow);
-  let cells = '', months = '', lastM = -1;
+  let cells = '', months = '', lastM = -1, lastW = -9;
   for (let w = 0; w < WEEKS; w++) {
     const colStart = Stats.addDays(start, w * 7);
-    if (colStart.getMonth() !== lastM) { if (w <= WEEKS - 3) months += `<span style="grid-column:${w + 1} / span 4">${KM_MONTH[colStart.getMonth()]}</span>`; lastM = colStart.getMonth(); }
+    if (colStart.getMonth() !== lastM) {
+      // a label needs ~4 weeks of room; skip it if the previous one is too close or it would run off the end
+      if (w - lastW >= 4 && w <= WEEKS - 3) { months += `<span style="left:${w / WEEKS * 100}%">${KM_MONTH[colStart.getMonth()]}</span>`; lastW = w; }
+      lastM = colStart.getMonth();
+    }
     for (let d = 0; d < 7; d++) {
       const x = Stats.addDays(start, w * 7 + d), k = Stats.dayKey(x), v = st.o[k];
       if (x > today) { cells += '<i class="fut"></i>'; continue; }
@@ -225,4 +262,32 @@ function renderStats() {
 function flash(msg) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
   setTimeout(() => t.remove(), 2600);
+}
+
+// ---------- reading plan (side box + "next in plan" at chapter end) ----------
+function planChips(st, day) {
+  return st.plan.portions[day].map(c => `<a href="#${B.ref(c, -1)}" class="${st.fin.has(c) ? 'r' : ''}${c === S.c ? ' cur' : ''}">${esc(B.chLabel(c))}</a>`).join('');
+}
+function renderPlan() {
+  const box = $('#planbox'), st = Plans.status(B);
+  if (!st) { box.innerHTML = `<div class="plancta"><b>ផែនការអាន</b><span>អានព្រះគម្ពីរមួយឆ្នាំ សញ្ញាថ្មី ៩០ ថ្ងៃ និងច្រើនទៀត</span><a href="today.html#plan">ជ្រើសរើសផែនការ ›</a></div>`; return; }
+  // today's portion, or the earliest unfinished day if the reader has fallen behind
+  const day = st.finished ? st.plan.days - 1 : (st.next >= 0 && st.next < st.today ? st.next : st.today);
+  const pct = st.doneN / st.plan.days * 100;
+  box.innerHTML = `<h3>${esc(st.plan.km)}</h3>
+    <div class="bk"><span>ថ្ងៃទី ${kmNum(day + 1)} / ${kmNum(st.plan.days)}${st.done[day] ? ' ✓' : ''}</span><span class="muted">${st.finished ? 'បានបញ្ចប់ 🎉' : st.behind > 0 ? `យឺត ${kmNum(st.behind)} ថ្ងៃ` : 'តាមកាលវិភាគ'}</span></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="pchips">${planChips(st, day)}</div>
+    <a class="sm" href="today.html#plan">មើលផែនការទាំងមូល ›</a>`;
+}
+function renderPlanNext() {
+  const el = $('#plannext'); if (!el) return;
+  const st = Plans.status(B); el.innerHTML = ''; if (!st || st.finished) return;
+  // is this chapter part of an unfinished plan day? → offer the next unread chapter of that day
+  const day = st.plan.portions.findIndex((p, i) => !st.done[i] && p.includes(S.c));
+  if (day < 0) return;
+  const nxt = st.plan.portions[day].find(c => c !== S.c && !st.fin.has(c));
+  el.innerHTML = nxt !== undefined
+    ? `<a href="#${B.ref(nxt, -1)}"><small>ផែនការ · ថ្ងៃទី ${kmNum(day + 1)} · បន្ទាប់</small><b>${esc(B.chLabel(nxt))} ›</b></a>`
+    : `<a href="today.html#plan"><small>ផែនការ · ថ្ងៃទី ${kmNum(day + 1)}</small><b>ជំពូកចុងក្រោយនៃថ្ងៃនេះ — អានដល់ចុង ដើម្បីបញ្ចប់ ✓</b></a>`;
 }
