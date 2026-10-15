@@ -132,13 +132,96 @@ const Reading = {
   last() { try { return JSON.parse(localStorage.getItem('kb-last') || 'null'); } catch (e) { return null; } },
   setLast(ref, label) { try { localStorage.setItem('kb-last', JSON.stringify({ ref, label, t: Date.now() })); } catch (e) {} },
   read() { try { return new Set(JSON.parse(localStorage.getItem('kb-read') || '[]')); } catch (e) { return new Set(); } },
-  markRead(c) { const s = Reading.read(); if (s.has(c)) return s; s.add(c); try { localStorage.setItem('kb-read', JSON.stringify([...s])); } catch (e) {} return s; },
+  markRead(c) {
+    const s = Reading.read();
+    Stats.finished(c);                       // counts toward today, even when re-reading
+    if (s.has(c)) return s; s.add(c);
+    try { localStorage.setItem('kb-read', JSON.stringify([...s])); } catch (e) {}
+    return s;
+  },
 };
+
+// ---------- personal reading statistics (stored only in this browser) ----------
+// kb-days = { "YYYY-MM-DD": { s: seconds read, l: [chapters finished that day] } }  (local dates)
+const Stats = (() => {
+  const KEY = 'kb-days', GOAL = 'kb-goal';
+  const pad = n => String(n).padStart(2, '0');
+  const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } };
+  const save = o => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} };
+  const day = (o, k) => (o[k] = o[k] || { s: 0, l: [] });
+  const active = d => !!d && (d.s >= 60 || (d.l && d.l.length > 0)); // a "reading day": ≥1 min or a finished chapter
+
+  function addTime(sec) { const o = load(); day(o, dayKey()).s += sec; save(o); }
+  function finished(c) { const o = load(), d = day(o, dayKey()); if (!d.l.includes(c)) d.l.push(c); save(o); }
+  function goal() { try { return +localStorage.getItem(GOAL) || 10; } catch (e) { return 10; } }
+  function setGoal(m) { try { localStorage.setItem(GOAL, m); } catch (e) {} }
+
+  function summary() {
+    const o = load(), today = new Date(), tk = dayKey(today);
+    // current streak: consecutive reading days ending today (or yesterday, if today not started yet)
+    let streak = 0, d = active(o[tk]) ? today : addDays(today, -1);
+    while (active(o[dayKey(d)])) { streak++; d = addDays(d, -1); }
+    // longest streak ever
+    const keys = Object.keys(o).filter(k => active(o[k])).sort();
+    let best = 0, run = 0, prev = null;
+    for (const k of keys) {
+      const t = new Date(k + 'T00:00:00');
+      run = prev && Math.round((t - prev) / 864e5) === 1 ? run + 1 : 1;
+      best = Math.max(best, run); prev = t;
+    }
+    // this week (Mon–Sun) and the last 28 days
+    const dow = (today.getDay() + 6) % 7; let week = 0, weekDays = 0, last28 = 0;
+    for (let i = 0; i <= dow; i++) { const x = o[dayKey(addDays(today, -i))]; if (x) week += x.s; if (active(x)) weekDays++; }
+    for (let i = 0; i < 28; i++) if (active(o[dayKey(addDays(today, -i))])) last28++;
+    const totalSec = Object.values(o).reduce((a, x) => a + (x.s || 0), 0);
+    const totalCh = Object.values(o).reduce((a, x) => a + ((x.l && x.l.length) || 0), 0);
+    return { o, today: o[tk] || { s: 0, l: [] }, streak, best, week, weekDays, perWeek: last28 / 4, totalSec, totalCh, days: keys.length, goal: goal() };
+  }
+
+  // backup / restore everything this site keeps about your reading
+  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme'];
+  function exportJSON() {
+    const out = { app: 'khmer-bible', v: 1, at: new Date().toISOString() };
+    for (const k of KEYS) { try { const v = localStorage.getItem(k); if (v != null) out[k] = v; } catch (e) {} }
+    return JSON.stringify(out, null, 1);
+  }
+  function importJSON(text) {
+    const inc = JSON.parse(text); if (inc.app !== 'khmer-bible') throw new Error('not a backup file');
+    // merge days and read chapters so a restore never loses what is already here
+    const days = load(); let incDays = {}; try { incDays = JSON.parse(inc['kb-days'] || '{}'); } catch (e) {}
+    for (const [k, v] of Object.entries(incDays)) { const d = day(days, k); d.s = Math.max(d.s, v.s || 0); d.l = [...new Set([...d.l, ...(v.l || [])])]; }
+    save(days);
+    let rd = []; try { rd = JSON.parse(inc['kb-read'] || '[]'); } catch (e) {}
+    try { localStorage.setItem('kb-read', JSON.stringify([...new Set([...Reading.read(), ...rd])])); } catch (e) {}
+    for (const k of ['kb-last', 'kb-goal', 'kb-fs']) if (inc[k] != null) try { localStorage.setItem(k, inc[k]); } catch (e) {}
+  }
+  function reset() { for (const k of ['kb-days', 'kb-read', 'kb-last']) try { localStorage.removeItem(k); } catch (e) {} }
+  return { dayKey, addDays, addTime, finished, goal, setGoal, summary, exportJSON, importJSON, reset, active };
+})();
+
+// Active reading timer: counts only while the tab is visible AND the reader has
+// scrolled, tapped or pressed a key within the last 90 s — an idle open tab adds nothing.
+function startReadingTimer() {
+  const STEP = 15, IDLE = 90e3; let lastAct = Date.now();
+  const bump = () => { lastAct = Date.now(); };
+  ['scroll', 'keydown', 'pointerdown', 'pointermove', 'touchstart', 'wheel'].forEach(e => addEventListener(e, bump, { passive: true }));
+  document.addEventListener('visibilitychange', bump);
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || Date.now() - lastAct > IDLE) return;
+    Stats.addTime(STEP);
+    dispatchEvent(new Event('statsupdate'));
+  }, STEP * 1000);
+}
+const fmtMin = sec => { const m = Math.floor(sec / 60); return m < 60 ? `${kmNum(m)} នាទី` : `${kmNum(Math.floor(m / 60))} ម៉ោង ${kmNum(m % 60)} នាទី`; };
 function mountContinue() {
   const host = document.querySelector('.hdr-right'), L = Reading.last();
   if (!host || !L || document.body.dataset.page === 'read') return;
   const a = document.createElement('a'); a.className = 'continue'; a.href = 'read.html#' + L.ref;
-  a.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 5.5C6.5 4 9.5 4 12 5.5v14c-2.5-1.5-5.5-1.5-8 0zM12 5.5c2.5-1.5 5.5-1.5 8 0v14c-2.5-1.5-5.5-1.5-8 0z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>បន្តអាន <b>${esc(L.label)}</b>`;
+  const st = Stats.summary().streak;
+  a.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 5.5C6.5 4 9.5 4 12 5.5v14c-2.5-1.5-5.5-1.5-8 0zM12 5.5c2.5-1.5 5.5-1.5 8 0v14c-2.5-1.5-5.5-1.5-8 0z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>បន្តអាន <b>${esc(L.label)}</b>` +
+    (st ? `<span class="streak" title="អានជាប់គ្នា ${st} ថ្ងៃ">🔥 ${kmNum(st)}</span>` : '');
   host.prepend(a);
 }
 document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mountContinue) : mountContinue();

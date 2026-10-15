@@ -30,8 +30,11 @@ let fs = 18; try { fs = +localStorage.getItem('kb-fs') || 18; } catch (e) {}
     clearTimeout(endTimer);
     if (!e.isIntersecting || !TEXT) return;
     const c = S.c, wait = Math.max(0, 6000 - (Date.now() - S.at));
-    endTimer = setTimeout(() => { if (c === S.c) { Reading.markRead(c); renderProgress(); } }, wait);
+    endTimer = setTimeout(() => { if (c === S.c) { Reading.markRead(c); renderProgress(); renderStats(); } }, wait);
   }), { threshold: 1 }).observe($('#end'));
+  startReadingTimer();
+  addEventListener('statsupdate', renderStats);
+  renderStats();
   Places.load(B).then(p => { P = p; render(); });
   route();
   KhmerText.load(B.meta).then(t => { TEXT = t; render(true); renderVotd(); }).catch(() => {});
@@ -160,4 +163,65 @@ function renderProgress() {
     <div class="bk"><span>${esc(B.meta.books[bi].km)}</span><span class="muted">${kmNum(inBook)} / ${kmNum(b - a)}</span></div>
     <div class="grid">${Array.from({ length: b - a }, (_, k) => `<a href="#${B.ref(a + k, -1)}" class="${read.has(a + k) ? 'r' : ''}${a + k === S.c ? ' cur' : ''}" title="ជំពូក ${kmNum(k + 1)}">${kmNum(k + 1)}</a>`).join('')}</div>
     <p class="muted tiny">ជំពូកមួយត្រូវបានរាប់ថា «បានអាន» នៅពេលអ្នកអានដល់ចុងជំពូក។ ទិន្នន័យរក្សាទុកតែក្នុងកម្មវិធីរុករករបស់អ្នក។</p>`;
+}
+
+// ---------- personal reading statistics ----------
+const KM_MONTH = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+const KM_DOW = ['ច', 'អ', 'ព', 'ព្រ', 'សុ', 'ស', 'អា']; // Mon → Sun
+function renderStats() {
+  const st = Stats.summary(), box = $('#stats');
+  const todayMin = st.today.s / 60, pct = Math.min(1, todayMin / st.goal), R = 30, C = 2 * Math.PI * R;
+  // heat-map: 26 weeks (Mon-first columns), today in the last column
+  const WEEKS = 26, today = new Date(), dow = (today.getDay() + 6) % 7;
+  const start = Stats.addDays(today, -(WEEKS - 1) * 7 - dow);
+  let cells = '', months = '', lastM = -1;
+  for (let w = 0; w < WEEKS; w++) {
+    const colStart = Stats.addDays(start, w * 7);
+    if (colStart.getMonth() !== lastM) { if (w <= WEEKS - 3) months += `<span style="grid-column:${w + 1} / span 4">${KM_MONTH[colStart.getMonth()]}</span>`; lastM = colStart.getMonth(); }
+    for (let d = 0; d < 7; d++) {
+      const x = Stats.addDays(start, w * 7 + d), k = Stats.dayKey(x), v = st.o[k];
+      if (x > today) { cells += '<i class="fut"></i>'; continue; }
+      const m = v ? v.s / 60 : 0, ch = v && v.l ? v.l.length : 0;
+      const lv = !Stats.active(v) ? 0 : m >= st.goal * 2 ? 4 : m >= st.goal ? 3 : m >= st.goal / 2 ? 2 : 1;
+      cells += `<i class="l${lv}${k === Stats.dayKey() ? ' td' : ''}" title="${x.getDate()} ${KM_MONTH[x.getMonth()]} · ${Math.round(m)} នាទី · ${ch} ជំពូក"></i>`;
+    }
+  }
+  box.innerHTML = `<h3>ស្ថិតិការអានរបស់អ្នក</h3>
+    <div class="today">
+      <svg viewBox="0 0 76 76" width="76" height="76" aria-hidden="true"><circle cx="38" cy="38" r="${R}" class="trk"/><circle cx="38" cy="38" r="${R}" class="val"
+        stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" transform="rotate(-90 38 38)"/><text x="38" y="36" text-anchor="middle">${kmNum(Math.floor(todayMin))}</text><text x="38" y="51" text-anchor="middle" class="u">នាទី</text></svg>
+      <div><b>ថ្ងៃនេះ</b><span>${pct >= 1 ? 'សម្រេចគោលដៅហើយ ✓' : `នៅសល់ ${kmNum(Math.ceil(st.goal - todayMin))} នាទីទៀត`} · ${kmNum(st.today.l.length)} ជំពូក</span>
+        <label class="goal">គោលដៅ <select id="goal">${[5, 10, 15, 20, 30, 60].map(g => `<option value="${g}"${g === st.goal ? ' selected' : ''}>${kmNum(g)} នាទី</option>`).join('')}</select></label></div>
+    </div>
+    <div class="kpis">
+      <div><b>🔥 ${kmNum(st.streak)}</b><span>ថ្ងៃជាប់គ្នា</span></div>
+      <div><b>${kmNum(st.best)}</b><span>ជាប់គ្នាយូរបំផុត</span></div>
+      <div><b>${kmNum(st.weekDays)}/៧</b><span>ថ្ងៃ សប្ដាហ៍នេះ</span></div>
+      <div><b>${fmtMin(st.week)}</b><span>សប្ដាហ៍នេះ</span></div>
+      <div><b>${kmNum(st.perWeek.toFixed(1))}</b><span>ថ្ងៃ/សប្ដាហ៍ (៤ សប្ដាហ៍)</span></div>
+      <div><b>${fmtMin(st.totalSec)}</b><span>សរុប · ${kmNum(st.days)} ថ្ងៃ</span></div>
+    </div>
+    <div class="heat"><div class="months">${months}</div><div class="hm"><div class="dows">${KM_DOW.map((d, i) => `<span>${i % 2 ? '' : d}</span>`).join('')}</div><div class="cells">${cells}</div></div>
+      <div class="lg">តិច <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> ច្រើន</div></div>
+    <div class="dataacts"><button id="bk">⬇ រក្សាទុកច្បាប់ចម្លង</button><label class="btn">⬆ ស្ដារ<input id="rs" type="file" accept=".json,application/json" hidden></label><button id="rz" class="danger">លុប</button></div>
+    <p class="muted tiny">រាប់តែពេលអ្នកកំពុងអានពិតប្រាកដ (ទំព័របើក និងមានការរំកិល/ចុចក្នុង ៩០ វិនាទី)។ ទិន្នន័យទាំងអស់នៅតែក្នុងកម្មវិធីរុករករបស់អ្នក — មិនផ្ញើទៅកន្លែងណាទេ។ ប្រើ «រក្សាទុកច្បាប់ចម្លង» ដើម្បីផ្ទេរទៅឧបករណ៍ផ្សេង។</p>`;
+  $('#goal').onchange = e => { Stats.setGoal(+e.target.value); renderStats(); };
+  $('#bk').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([Stats.exportJSON()], { type: 'application/json' }));
+    a.download = `khmer-bible-reading-${Stats.dayKey()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $('#rs').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { Stats.importJSON(await f.text()); renderStats(); renderProgress(); flash('បានស្ដារទិន្នន័យ ✓'); } catch (err) { flash('ឯកសារមិនត្រឹមត្រូវ'); }
+  };
+  const rz = $('#rz');
+  rz.onclick = () => {
+    if (rz.dataset.arm) { Stats.reset(); renderStats(); renderProgress(); flash('បានលុបទិន្នន័យការអាន'); return; }
+    rz.dataset.arm = 1; rz.textContent = 'ចុចម្ដងទៀត ដើម្បីលុប'; setTimeout(() => { if (rz.isConnected) { delete rz.dataset.arm; rz.textContent = 'លុប'; } }, 4000);
+  };
+}
+function flash(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
 }

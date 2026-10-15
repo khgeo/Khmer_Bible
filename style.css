@@ -114,3 +114,4 @@ nav a:hover{color:var(--text)}
 .votd .acts{display:flex;gap:12px;flex-wrap:wrap}
 .tabs .sm{font-size:12.5px;text-decoration:none;align-self:center;margin-right:4px}
 @media (max-width:600px){nav .en{display:none} nav a{padding:4px 12px}}
+.continue .streak{margin-left:4px;padding-left:8px;border-left:1px solid var(--line);font-weight:600}

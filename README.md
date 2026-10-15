@@ -21,6 +21,8 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - Place names are underlined and open the map; a mini-map shows the chapter's places in the order they are mentioned.
 - **Continue reading:** your last position is remembered, and every page shows a «បន្តអាន» button to go straight back.
 - **Reading progress:** a chapter counts as read once you reach its end; see your % of the whole Bible and a chapter grid per book.
+- **Personal reading statistics** — minutes read today (with a daily goal ring), reading streak 🔥 and longest streak, days read this week and per week, total time, and a 26-week calendar heat-map. Time counts only while the reader page is visible *and* you have scrolled, tapped or typed within the last 90 seconds, so an idle tab adds nothing. The streak also shows on the «បន្តអាន» button on every page.
+- **Private by design:** all of this stays in the reader's own browser (localStorage) and is never sent anywhere. «រក្សាទុកច្បាប់ចម្លង» downloads a backup file that can be restored («ស្ដារ») on another phone or computer; restoring merges with existing data.
 - **Verse of the day** (also on the arcs page).
 
 ## Map (`maps.html`)
