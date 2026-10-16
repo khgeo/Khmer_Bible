@@ -75,6 +75,39 @@ Inspired by Pitch Interactive's Bible/Quran word comparison. Type any Khmer word
 - Khmer-aware matching: zero-width spaces are ignored and `្ដ` / `្ត` count as the same letter, so `សេចក្ដី` and `សេចក្តី` both match.
 - Hover a cell to read the verse; click to jump to its cross-reference arcs. Share links like `words.html#q=ស្រឡាញ់&m=word`.
 
+## Daily posts to Telegram / Facebook
+
+Every morning at about 6:00 (Cambodia time) a GitHub Action (`.github/workflows/daily-post.yml`) posts **the same verse of the day and daily devotional the website shows**:
+
+- **Telegram channel:** a verse picture (1080×1350, Khmer text from ពគប) with the verse as caption, then the devotional as a message with a «អាននៅលើគេហទំព័រ» button.
+- **Facebook Page:** one photo post — the verse picture, with the verse and the devotional as the text.
+
+It runs on GitHub's servers for free; your computer doesn't need to be on. Set up only the channels you want — a channel without its secrets is skipped.
+
+**Telegram (5 minutes)**
+1. In Telegram, open **@BotFather** → `/newbot` → choose a name → copy the **bot token**.
+2. Create your channel (or use an existing one), open its settings → **Administrators → Add admin** → add your bot, allow **Post messages**.
+3. Public channel: the chat id is `@your_channel_name`. Private channel: forward a channel post to **@getidsbot** (or similar) to get an id like `-100…`.
+
+**Facebook Page (15 minutes, once)**
+1. At [developers.facebook.com](https://developers.facebook.com/) → **Create app** (type *Business*), and add the *Facebook Login for Business* / Pages use case.
+2. Open **Graph API Explorer**, pick your app, add the permissions `pages_show_list`, `pages_manage_posts`, `pages_read_engagement`, click **Generate Access Token** and allow your Page.
+3. On your computer run `python3 scripts/fb_page_token.py APP_ID APP_SECRET THAT_TOKEN PAGE_ID` — it prints a Page token that **does not expire** (check that it says *Expires: never*).
+4. If posts are only visible to you, switch the app from *Development* to *Live* (it needs a privacy-policy URL — a page on this site is enough).
+
+**Add the secrets in GitHub:** repository → **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Example |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | `7712345678:AAH…` |
+| `TELEGRAM_CHAT_ID` | `@khmer_bible_daily` |
+| `FB_PAGE_ID` | `1234567890` |
+| `FB_PAGE_TOKEN` | `EAAG…` |
+
+**Test it:** **Actions → Daily verse & devotional → Run workflow**. With *Preview only* ticked it posts nothing — open the run to read the messages and download the picture (artifact *daily-card*). Untick it to post for real. You can also preview any date (e.g. `2026-12-25`) or post to one channel only.
+
+Notes: change the time in the `cron:` line (it is in UTC: Cambodia = UTC+7). GitHub turns scheduled workflows off after 60 days without any commit to the repository — you'll get an email; click *Enable workflow* (or make any small commit). Keep tokens only in GitHub secrets, never in files. Each post credits ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប) and links back to the site; the ពគប text is © BFBS/UBS 1954, 1962, so check with the Bible Society of Cambodia if you plan large-scale or commercial use.
+
 ## “Live connection” to ពគប
 The Khmer text is **not stored in this repo**. On first visit the browser fetches it in a Web Worker from the [Beblia/Holy-Bible-XML-Format](https://github.com/Beblia/Holy-Bible-XML-Format) GitHub repository (`KhmerBFBSBible.xml`, via jsDelivr with raw.githubusercontent as fallback), then keeps it in the browser cache so later visits are instant. The arcs work immediately even before the text arrives.
 
@@ -119,6 +152,8 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
+| `.github/workflows/daily-post.yml`, `scripts/daily_post.py`, `scripts/fb_page_token.py` | Daily Telegram / Facebook posts |
+| `assets/fonts/` | Battambang font (SIL OFL) for the verse pictures |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
 | `common.js`, `style.css` | Shared live text loader, themes, reading progress, helpers |
 | `data/places.json` | Places: names (Khmer/English), type, coordinates, confidence, verse indices |
