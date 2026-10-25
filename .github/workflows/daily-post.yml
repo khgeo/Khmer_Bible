@@ -1,0 +1,65 @@
+# Posts the verse of the day + daily devotional to Telegram and/or a Facebook Page, every morning.
+# Setup: README → "Daily posts to Telegram / Facebook". Secrets used (Settings → Secrets and variables → Actions):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, FB_PAGE_ID, FB_PAGE_TOKEN   (leave a pair out to skip that channel)
+name: Daily verse & devotional
+
+on:
+  schedule:
+    - cron: "47 22 * * *"   # 05:47 in Cambodia (UTC+7); GitHub often starts a few minutes late → about 6 am
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview only (don't post)"
+        type: boolean
+        default: true
+      date:
+        description: "Date to post, YYYY-MM-DD (empty = today in Cambodia)"
+        required: false
+      only:
+        description: "Post to one channel only"
+        type: choice
+        options: [both, telegram, facebook]
+        default: both
+
+concurrency: daily-post   # never two runs at once
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow + Khmer text shaping
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libraqm0
+          pip install --quiet pillow
+          python -c "from PIL import features; assert features.check('raqm'), 'libraqm missing'"
+      - name: Download the ពគប text
+        run: |
+          curl -fsSL --retry 3 -o KhmerBFBSBible.xml https://cdn.jsdelivr.net/gh/Beblia/Holy-Bible-XML-Format@master/KhmerBFBSBible.xml \
+          || curl -fsSL --retry 3 -o KhmerBFBSBible.xml https://raw.githubusercontent.com/Beblia/Holy-Bible-XML-Format/master/KhmerBFBSBible.xml
+      - name: Post
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://khgeo.github.io/Khmer_Bible/' }}
+        run: |
+          ARGS="--bible KhmerBFBSBible.xml --out daily_card.png"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
+            [ -n "${{ inputs.date }}" ] && ARGS="$ARGS --date ${{ inputs.date }}"
+            [ "${{ inputs.only }}" != "both" ] && ARGS="$ARGS --only ${{ inputs.only }}"
+          fi
+          python scripts/daily_post.py $ARGS
+      - name: Keep the picture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-card
+          path: daily_card.png
+          retention-days: 14
