@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ចម្រៀង — Khmer Bible Music</title>
+<meta name="description" content="Worship songs and music to listen to while you read the Khmer Bible (ពគប 1954).">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("kb-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;600&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="music.css">
+<style>
+.mmain{max-width:1100px;margin:0 auto;padding:6px 20px 30px;display:block}
+.mhero{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin:6px 0 18px}
+.mhero p{flex:1 1 360px;margin:0;font:15px/1.95 var(--verse);color:var(--vtext)}
+.mhero .acts{display:flex;gap:8px;flex-wrap:wrap}
+.mbtn{display:inline-flex;align-items:center;gap:8px;background:var(--btn);color:var(--btn-text);border:0;border-radius:999px;padding:10px 18px;font:600 14px var(--km);cursor:pointer}
+.mbtn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.mbtn svg{width:16px;height:16px;fill:currentColor}
+.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:26px}
+.plc{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--text)}
+.plc .art{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,var(--vsel),var(--panel));display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.1);transition:transform .15s,box-shadow .15s}
+.plc .art img{width:100%;height:100%;object-fit:cover}
+.plc .art .ph{font-size:46px;color:var(--accent);opacity:.7}
+.plc:hover .art{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.plc .go{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;opacity:0;transform:translateY(6px);transition:.15s;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.plc .go svg{width:20px;height:20px;fill:currentColor}
+.plc:hover .go,.plc.on .go{opacity:1;transform:none}
+.plc b{display:block;margin-top:8px;font-size:15px;font-weight:600}
+.plc small{color:var(--muted);font-size:12.5px}
+.plc.on b{color:var(--accent)}
+.tracks h2{font-size:20px;margin:0 0 4px}
+.tracks .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.tt{width:100%;border-collapse:collapse;font-size:14px}
+.tt th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding:6px 8px}
+.tt td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tt tr{cursor:pointer}
+.tt tbody tr:hover{background:var(--hover)}
+.tt tr.cur{background:var(--vsel)}
+.tt tr.cur .tn b{color:var(--accent)}
+.tt .num{width:36px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
+.tt .tn{display:flex;align-items:center;gap:10px}
+.tt .tn span{display:flex;flex-direction:column}
+.tt .tn b{font-weight:600}
+.tt .tn small,.tt .al{color:var(--muted);font-size:12.5px}
+.tt .d{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;width:60px}
+.tt .ly{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 6px;color:var(--muted);margin-left:6px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:24px 22px;font-size:14px;line-height:2}
+.empty code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:12.5px}
+@media (max-width:700px){.mmain{padding:4px 12px 24px}.plgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tt .al,.tt th.al{display:none}}
+</style>
+</head>
+<body data-page="music">
+<header>
+  <div class="title">
+    <h1>ចម្រៀង</h1>
+    <p>Music · ស្ដាប់ចម្រៀងពេលអានព្រះគម្ពីរ</p>
+    <nav><a href="./">ធ្នូសម្ពន្ធ<span class="en"> · Arcs</span></a><a href="today.html">ថ្ងៃនេះ<span class="en"> · Today</span></a><a href="read.html">អាន<span class="en"> · Read</span></a><a href="qa.html">សំណួរ<span class="en"> · Q&amp;A</span></a><a href="prayer.html">អធិស្ឋាន<span class="en"> · Prayer</span></a><a class="on" href="music.html">ចម្រៀង<span class="en"> · Music</span></a><a href="videos.html">វីដេអូ<span class="en"> · Videos</span></a><a href="maps.html">ផែនទី<span class="en"> · Map</span></a><a href="words.html">ប្រេកង់ពាក្យ<span class="en"> · Words</span></a></nav>
+  </div>
+  <div class="hdr-right"></div>
+</header>
+
+<main class="mmain">
+  <section class="mhero">
+    <p>ស្ដាប់ចម្រៀងថ្វាយបង្គំ និងតន្ត្រីស្ងប់ស្ងាត់ ពេលអ្នកអាន អធិស្ឋាន ឬសញ្ជឹងគិតព្រះបន្ទូល។ ចម្រៀងនៅតែចាក់ ពេលអ្នកទៅទំព័រ «អាន» ឬទំព័រផ្សេងទៀត — របារចម្រៀងនៅខាងក្រោមគ្រប់ទំព័រ។</p>
+    <div class="acts"><button class="mbtn" id="playAll" type="button"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>ចាក់ទាំងអស់</button>
+      <button class="mbtn ghost" id="shufAll" type="button"><svg viewBox="0 0 24 24"><path d="M16 4h4v4M4 18 20 4M20 16v4h-4M14 14l6 6M4 6l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>ចាក់ចៃដន្យ</button>
+      <a class="mbtn ghost" href="read.html">📖 អានព្រះគម្ពីរ</a></div>
+  </section>
+  <div id="pls" class="plgrid"></div>
+  <section id="tracks" class="tracks"></section>
+</main>
+
+<footer>
+  សូមដាក់តែចម្រៀងដែលអ្នកមានសិទ្ធិចែកចាយ (ចម្រៀងផ្ទាល់ខ្លួន ឬមានការអនុញ្ញាតពីម្ចាស់) ·
+  <a href="https://github.com/khgeo/Khmer_Bible" target="_blank" rel="noopener">GitHub</a> ·
+  <a href="https://github.com/khgeo" target="_blank" rel="noopener">YAM Sarath</a>
+</footer>
+<script src="common.js"></script>
+<script src="music.js"></script>
+<script>
+(async function () {
+  let sel = null;
+  const d = await Music.ready, P = Music.playlists;
+  const plAll = { id: '__all', km: 'ចម្រៀងទាំងអស់', en: 'All songs', tracks: Music.all, c: (P.find(p => p.c) || {}).c };
+  if (!P.length) {
+    $('#pls').outerHTML = `<div class="empty"><b>មិនទាន់មានចម្រៀងនៅឡើយ។</b><br>
+      ១. ដាក់ឯកសារ <code>.mp3</code> ក្នុងថត <code>music/</code> (ថតរងនីមួយៗ = បញ្ជីចាក់មួយ ឧ. <code>music/worship/</code>)<br>
+      ២. នៅលើ GitHub បញ្ជីចាក់ <code>music/playlist.json</code> នឹងបង្កើតដោយស្វ័យប្រវត្តិ (ឬដំណើរការ <code>python3 scripts/build_playlist.py</code>)<br>
+      មើលការណែនាំពេញលេញក្នុង <code>music/README.md</code>។</div>`;
+    $('.mhero .acts').style.display = 'none'; return;
+  }
+  const lists = [plAll, ...P];
+  sel = Music.state.pl && lists.some(p => p.id === Music.state.pl) ? Music.state.pl : lists[0].id;
+  const art = p => p.c ? `<img src="${encodeURI(p.c)}" alt="" loading="lazy">` : '<span class="ph">♫</span>';
+  function drawPls() {
+    $('#pls').innerHTML = lists.map(p => `<button class="plc${p.id === sel ? ' on' : ''}" data-id="${esc(p.id)}" type="button"><span class="art">${art(p)}<span class="go" data-play="${esc(p.id)}"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span></span>
+      <b>${esc(p.km)}</b><small>${esc(p.en && p.en !== p.km ? p.en + ' · ' : '')}${kmNum(p.tracks.length)} បទ</small></button>`).join('');
+  }
+  function drawTracks() {
+    const p = lists.find(x => x.id === sel), st = Music.state, total = p.tracks.reduce((a, t) => a + (t.d || 0), 0);
+    $('#tracks').innerHTML = `<h2>${esc(p.km)}</h2><div class="sub">${kmNum(p.tracks.length)} បទ${total ? ' · ' + Music.fmt(total) : ''}${p.note ? ' · ' + esc(p.note) : ''}</div>
+      <table class="tt"><thead><tr><th class="num">#</th><th>ចំណងជើង</th><th class="al">អាល់ប៊ុម</th><th class="d">⏱</th></tr></thead><tbody>
+      ${p.tracks.map((t, i) => `<tr class="${t.id === st.id ? 'cur' : ''}" data-tr="${esc(t.id)}"><td class="num">${t.id === st.id && Music.playing ? Music.eq() : kmNum(i + 1)}</td>
+        <td><div class="tn">${Music.coverHTML(t, 'sm')}<span><b>${esc(t.t)}${t.lyr ? '<i class="ly">ទំនុក</i>' : ''}</b><small>${esc(t.a || '')}</small></span></div></td>
+        <td class="al">${esc(t.al || '')}</td><td class="d">${t.d ? Music.fmt(t.d) : ''}</td></tr>`).join('')}</tbody></table>`;
+  }
+  drawPls(); drawTracks();
+  $('#pls').onclick = e => { const b = e.target.closest('.plc'); if (!b) return; if (e.target.closest('[data-play]')) Music.playList(b.dataset.id, false); sel = b.dataset.id; drawPls(); drawTracks(); };
+  $('#tracks').onclick = e => { const r = e.target.closest('tr[data-tr]'); if (r) Music.playTrack(r.dataset.tr, sel); };
+  $('#playAll').onclick = () => Music.playList(sel, false);
+  $('#shufAll').onclick = () => Music.playList(sel, true);
+  Music.on(() => drawTracks());
+  setInterval(() => { if (document.querySelector('.tt')) { const st = Music.state; document.querySelectorAll('.tt tr[data-tr]').forEach(r => r.classList.toggle('cur', r.dataset.tr === st.id)); } }, 1500);
+})();
+</script>
+<script data-goatcounter="https://khgeo.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

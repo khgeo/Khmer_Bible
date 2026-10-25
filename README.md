@@ -75,6 +75,21 @@ Inspired by Pitch Interactive's Bible/Quran word comparison. Type any Khmer word
 - Khmer-aware matching: zero-width spaces are ignored and `្ដ` / `្ត` count as the same letter, so `សេចក្ដី` and `សេចក្តី` both match.
 - Hover a cell to read the verse; click to jump to its cross-reference arcs. Share links like `words.html#q=ស្រឡាញ់&m=word`.
 
+## Music (`music.html` + a player on every page)
+
+Worship songs or quiet music to listen to while reading. A player bar sits at the bottom of every page and keeps playing when you move to another page (it continues from the same second; if the browser asks for a tap first, the bar shows «ចុចកន្លែងណាមួយ ដើម្បីបន្តស្ដាប់» and any tap resumes it).
+
+- **Controls:** play/pause, previous/next, seek, volume/mute, shuffle, repeat (all / one / off), sleep timer (15 / 30 / 60 min or end of song, with a gentle fade-out).
+- **Now playing panel:** big cover, the queue, all playlists, search by title or singer, and **lyrics** — timed `.lrc` lyrics highlight the line being sung (tap a line to jump there).
+- **Stays out of the way:** shrink the bar to a small round button (⎯), or close it (✕). On phones it is a slim bar that opens a full-screen player.
+- **Lock screen & headphones:** title, artist and cover show on the phone's lock screen; media keys and headphone buttons work.
+- **Pop-out window (⧉):** plays in a small separate window, so music never stops while you browse the site.
+- Only one tab plays at a time. The last song, position, volume and settings are remembered on the device.
+- The Music menu item and the player appear only once songs have been added.
+
+**Adding songs:** put `.mp3` files in `music/` — each sub-folder is a playlist (e.g. `music/worship/`). Upload them on GitHub (*Add file → Upload files*) and the workflow `.github/workflows/music-playlist.yml` rebuilds `music/playlist.json` from the files' tags (title, artist, album, cover, length) automatically. Locally: `pip install mutagen && python3 scripts/build_playlist.py`. Details, lyrics format and size limits: `music/README.md`.
+**Copyright:** only add songs you have the right to share (your own recordings, public-domain hymns, Creative Commons music, or with written permission).
+
 ## Daily posts to Telegram / Facebook
 
 Every morning at about 6:00 (Cambodia time) a GitHub Action (`.github/workflows/daily-post.yml`) posts **the same verse of the day and daily devotional the website shows**:
@@ -152,6 +167,7 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
+| `music.html`, `music.js`, `music.css`, `music/`, `scripts/build_playlist.py`, `.github/workflows/music-playlist.yml` | Music player and playlists |
 | `.github/workflows/daily-post.yml`, `scripts/daily_post.py`, `scripts/fb_page_token.py` | Daily Telegram / Facebook posts |
 | `assets/fonts/` | Battambang font (SIL OFL) for the verse pictures |
 | `maps.html`, `maps.js`, `maps.css`, `places.js` | Places map (Leaflet) |
