@@ -4,8 +4,21 @@
    "id": "other",
    "km": "ចម្រៀងផ្សេងៗ",
    "en": "Other songs",
-   "c": "music/covers/48f241829fce.jpg",
+   "c": "music/covers/c3bc2bc6453e.jpg",
    "tracks": [
+    {
+     "id": "102-នបងជវត---Bread-of-Life",
+     "src": "music/102. នបងជវត - Bread of Life.mp3",
+     "t": "នបងជវត - Bread of Life",
+     "d": 284
+    },
+    {
+     "id": "105_ព្រះគ្រិស្តជាគ្រប់ទាំងអស់ដល់អ្នក_Christ_is_everything",
+     "src": "music/105_ព្រះគ្រិស្តជាគ្រប់ទាំងអស់ដល់អ្នក_Christ_is_everything.mp3",
+     "t": "105. ព្រះគ្រិស្តជាគ្រប់ទាំងអស់ដល់អ្នក - Christ is everything",
+     "d": 281,
+     "c": "music/covers/c3bc2bc6453e.jpg"
+    },
     {
      "id": "ក្នុងបេះដូងខ្ញុំ_មានតែព្រះយេស៊ូវ",
      "src": "music/ក្នុងបេះដូងខ្ញុំ_មានតែព្រះយេស៊ូវ.mp3",
