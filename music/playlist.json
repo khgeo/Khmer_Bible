@@ -4,7 +4,7 @@
    "id": "other",
    "km": "ចម្រៀងផ្សេងៗ",
    "en": "Other songs",
-   "c": "music/covers/10802119d7b1.jpg",
+   "c": "music/covers/d1362e05d8b4.jpg",
    "tracks": [
     {
      "id": "ខ្ញុំមានអំណរ",
@@ -17,6 +17,13 @@
      "src": "music/ទឹកដីព្រះពរ.mp3",
      "t": "ទឹកដីព្រះពរ",
      "d": 202
+    },
+    {
+     "id": "នាងរស់",
+     "src": "music/នាងរស់.mp3",
+     "t": "នាងរស់",
+     "d": 245,
+     "c": "music/covers/d1362e05d8b4.jpg"
     },
     {
      "id": "នឹកចាំ",
