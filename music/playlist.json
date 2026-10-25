@@ -4,7 +4,7 @@
    "id": "other",
    "km": "ចម្រៀងផ្សេងៗ",
    "en": "Other songs",
-   "c": "music/covers/04b5148af9fe.jpg",
+   "c": "music/covers/fb0ccf19145c.jpg",
    "tracks": [
     {
      "id": "ខ្ញុំមានអំណរ",
@@ -35,13 +35,6 @@
      "src": "music/សូមស្វែងរកទ្រង់នៅគ្រាចុងក្រោយ.mp3",
      "t": "សូមស្វែងរកទ្រង់នៅគ្រាចុងក្រោយ",
      "d": 263
-    },
-    {
-     "id": "សូមស្វែងរកទ្រង់​_Video_Lyrics_IWORSHIP_STUDIO",
-     "src": "music/សូមស្វែងរកទ្រង់​_Video_Lyrics_IWORSHIP_STUDIO.mp3",
-     "t": "សូមស្វែងរកទ្រង់​ [ Video Lyrics ] IWORSHIP STUDIO",
-     "d": 263,
-     "c": "music/covers/04b5148af9fe.jpg"
     },
     {
      "id": "ស្ថានសួគ៌​ពិតជា​មាន",
