@@ -97,7 +97,7 @@ def main():
             t, a, al, secs, cov, n = tags(p)
             base = os.path.splitext(p)[0]
             lyr = next((rel(base + e) for e in (".lrc", ".txt") if os.path.exists(base + e)), None)
-            tid = re.sub(r"[^\w-]+", "-", unicodedata.normalize("NFC", os.path.splitext(rel(p))[0][6:]), flags=re.U).strip("-")
+            tid = re.sub(r"[\s/\\?#%&\"'<>.,;:!*()\[\]{}=+]+", "-", unicodedata.normalize("NFC", os.path.splitext(rel(p))[0][6:])).strip("-_")
             while tid in ids: tid += "-2"
             ids.add(tid)
             tr = {"id": tid, "src": rel(p), "t": t or nice(f)}
