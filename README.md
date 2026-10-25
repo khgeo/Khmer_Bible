@@ -85,10 +85,17 @@ Worship songs or quiet music to listen to while reading. A player bar sits at th
 - **Lock screen & headphones:** title, artist and cover show on the phone's lock screen; media keys and headphone buttons work.
 - **Pop-out window (⧉):** plays in a small separate window, so music never stops while you browse the site.
 - Only one tab plays at a time. The last song, position, volume and settings are remembered on the device.
-- The Music menu item and the player appear only once songs have been added.
+- **♥ Favourites and my own playlists:** each listener can tap ♥ on any song, create playlists (✎ rename, 🗑 delete), add songs with ⋯ → «បញ្ចូលក្នុងបញ្ជី…», reorder them, and use «ចាក់បន្ទាប់» (play next). Saved on the listener's device and included in the reading-data backup file.
+- **Listen offline:** ⋯ → «ទាញយកទុកស្ដាប់ពេលគ្មានអ៊ីនធឺណិត» (or ⬇ for a whole playlist) keeps a copy of the song on the device; saved songs show ✓ and are collected in «ទាញយករួច».
+- **Songs from the listener's own phone/computer:** «ចម្រៀងនៅលើឧបករណ៍» → «បញ្ចូលពីឧបករណ៍» adds their own MP3s (title, singer and cover are read from the file). They stay only on that device, play offline, and can go into playlists too. Nothing is uploaded.
+- The player button appears once there are songs on the site or on the device.
 
 **Adding songs:** put `.mp3` files in `music/` — each sub-folder is a playlist (e.g. `music/worship/`). Upload them on GitHub (*Add file → Upload files*) and the workflow `.github/workflows/music-playlist.yml` rebuilds `music/playlist.json` from the files' tags (title, artist, album, cover, length) automatically. Locally: `pip install mutagen && python3 scripts/build_playlist.py`. Details, lyrics format and size limits: `music/README.md`.
 **Copyright:** only add songs you have the right to share (your own recordings, public-domain hymns, Creative Commons music, or with written permission).
+
+## Works offline & installs like an app
+
+A service worker (`sw.js`) keeps a copy of every page you open, so the site opens without internet: reading (the ពគប text is cached after the first visit), devotionals, prayers, Q&A, and any songs you saved or added from your device. `manifest.json` lets people **add the site to their home screen** (Chrome: menu → *Install app* / *Add to Home screen*; iPhone Safari: Share → *Add to Home Screen*). On iPhone, installing it to the home screen also protects saved songs from being cleared after weeks without visits.
 
 ## Daily posts to Telegram / Facebook
 
@@ -167,6 +174,7 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
+| `sw.js`, `manifest.json`, `assets/icon-*.png` | Offline copy of the site, install to home screen |
 | `music.html`, `music.js`, `music.css`, `music/`, `scripts/build_playlist.py`, `.github/workflows/music-playlist.yml` | Music player and playlists |
 | `.github/workflows/daily-post.yml`, `scripts/daily_post.py`, `scripts/fb_page_token.py` | Daily Telegram / Facebook posts |
 | `assets/fonts/` | Battambang font (SIL OFL) for the verse pictures |

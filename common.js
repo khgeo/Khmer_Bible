@@ -182,7 +182,7 @@ const Stats = (() => {
   }
 
   // backup / restore everything this site keeps about your reading
-  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme', 'kb-hl', 'kb-plan', 'kb-journal', 'kb-prayers', 'kb-devo'];
+  const KEYS = ['kb-days', 'kb-read', 'kb-last', 'kb-goal', 'kb-fs', 'kb-theme', 'kb-hl', 'kb-plan', 'kb-journal', 'kb-prayers', 'kb-devo', 'kb-myplaylists'];
   function exportJSON() {
     const out = { app: 'khmer-bible', v: 1, at: new Date().toISOString() };
     for (const k of KEYS) { try { const v = localStorage.getItem(k); if (v != null) out[k] = v; } catch (e) {} }
@@ -197,7 +197,7 @@ const Stats = (() => {
     let rd = []; try { rd = JSON.parse(inc['kb-read'] || '[]'); } catch (e) {}
     try { localStorage.setItem('kb-read', JSON.stringify([...new Set([...Reading.read(), ...rd])])); } catch (e) {}
     // highlights and journal: merge, keeping the newer entry for the same verse/day
-    for (const k of ['kb-hl', 'kb-journal', 'kb-prayers', 'kb-devo']) {
+    for (const k of ['kb-hl', 'kb-journal', 'kb-prayers', 'kb-devo', 'kb-myplaylists']) {
       let cur = {}, add = {}; try { cur = JSON.parse(localStorage.getItem(k) || '{}'); add = JSON.parse(inc[k] || '{}'); } catch (e) {}
       for (const [id, v] of Object.entries(add)) if (!cur[id] || (v.t || 0) >= (cur[id].t || 0)) cur[id] = v;
       try { localStorage.setItem(k, JSON.stringify(cur)); } catch (e) {}
@@ -404,3 +404,8 @@ const Videos = (() => {
   function bind(root, list) { root.querySelectorAll('.vcard').forEach(b => b.onclick = () => play(list[+b.dataset.vi])); }
   return { load, forChapter, forQuestion, card, play, bind, thumb };
 })();
+
+// ---------- offline: a service worker keeps a copy of the site so it opens without internet ----------
+if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
+  addEventListener('load', () => { try { navigator.serviceWorker && navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {} });
+}

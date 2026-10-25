@@ -7,6 +7,9 @@
 <meta name="description" content="Worship songs and music to listen to while you read the Khmer Bible (ពគប 1954).">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("kb-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;600&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
@@ -50,7 +53,34 @@
 .tt .ly{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 6px;color:var(--muted);margin-left:6px}
 .empty{border:2px dashed var(--line);border-radius:16px;padding:24px 22px;font-size:14px;line-height:2}
 .empty code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:12.5px}
-@media (max-width:700px){.mmain{padding:4px 12px 24px}.plgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tt .al,.tt th.al{display:none}}
+.sect{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.3px;margin:4px 0 10px;display:flex;align-items:center;gap:10px}
+.sect small{font-weight:400}
+.plc.mine .art{background:linear-gradient(135deg,#fde2ea,#fff3f6)}
+:root[data-theme="dark"] .plc.mine .art{background:linear-gradient(135deg,#3a1520,#1a0c10)}
+.plc.fav .art .ph{color:#e0245e;opacity:.85}
+.plc.local .art{background:linear-gradient(135deg,#e3f1ff,#f4f9ff)}
+:root[data-theme="dark"] .plc.local .art{background:linear-gradient(135deg,#0e2236,#0a1520)}
+.plc.new .art{background:none;border:2px dashed var(--line);box-shadow:none}
+.plc.new .art .ph{font-size:40px;color:var(--muted)}
+.plc .mosaic{display:grid;grid-template-columns:1fr 1fr;width:100%;height:100%}
+.plc .mosaic img{width:100%;height:100%;object-fit:cover}
+.lhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
+.lhead h2{margin:0;font-size:22px}
+.lhead .sub{margin:0}
+.lhead .acts{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.lhead input{background:var(--panel);color:var(--text);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;font:600 18px var(--km)}
+.mbtn.sm{padding:7px 14px;font-size:13px}
+.mbtn.warn{background:#c62f3c;color:#fff}
+.tt td.act{width:76px;text-align:right;white-space:nowrap}
+.tt td.act .kbm-b{display:inline-grid}
+.tt .bdg{margin-left:6px}
+.note2{font-size:13px;color:var(--muted);line-height:1.9;margin:0 0 12px}
+details.owner{margin-top:26px;font-size:13px;color:var(--muted)}
+details.owner summary{cursor:pointer;color:var(--link)}
+details.owner .empty{margin-top:10px}
+.offline-tip{display:none;border:1px solid var(--accent);background:var(--vsel);border-radius:12px;padding:10px 14px;font-size:13.5px;margin:0 0 16px}
+body.offline .offline-tip{display:block}
+@media (max-width:700px){.lhead .acts{margin-left:0}.mmain{padding:4px 12px 24px}.plgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tt .al,.tt th.al{display:none}}
 </style>
 </head>
 <body data-page="music">
@@ -64,18 +94,24 @@
 </header>
 
 <main class="mmain">
+  <p class="offline-tip">📴 គ្មានអ៊ីនធឺណិត — អ្នកអាចស្ដាប់បទដែលបានទាញយក (⬇) និងបទនៅលើឧបករណ៍ (📱) បាន។</p>
   <section class="mhero">
-    <p>ស្ដាប់ចម្រៀងថ្វាយបង្គំ និងតន្ត្រីស្ងប់ស្ងាត់ ពេលអ្នកអាន អធិស្ឋាន ឬសញ្ជឹងគិតព្រះបន្ទូល។ ចម្រៀងនៅតែចាក់ ពេលអ្នកទៅទំព័រ «អាន» ឬទំព័រផ្សេងទៀត — របារចម្រៀងនៅខាងក្រោមគ្រប់ទំព័រ។</p>
-    <div class="acts"><button class="mbtn" id="playAll" type="button"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>ចាក់ទាំងអស់</button>
-      <button class="mbtn ghost" id="shufAll" type="button"><svg viewBox="0 0 24 24"><path d="M16 4h4v4M4 18 20 4M20 16v4h-4M14 14l6 6M4 6l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>ចាក់ចៃដន្យ</button>
-      <a class="mbtn ghost" href="read.html">📖 អានព្រះគម្ពីរ</a></div>
+    <p>ស្ដាប់ចម្រៀងថ្វាយបង្គំ និងតន្ត្រីស្ងប់ស្ងាត់ ពេលអ្នកអាន អធិស្ឋាន ឬសញ្ជឹងគិតព្រះបន្ទូល។ ចុច ♥ ដើម្បីរក្សាបទដែលអ្នកចូលចិត្ត បង្កើតបញ្ជីផ្ទាល់ខ្លួន ទាញយកទុកស្ដាប់ពេលគ្មានអ៊ីនធឺណិត ឬបញ្ចូលចម្រៀងពីទូរស័ព្ទរបស់អ្នក។</p>
+    <div class="acts"><a class="mbtn ghost" href="read.html">📖 អានព្រះគម្ពីរ</a></div>
   </section>
+  <div class="sect">បញ្ជីរបស់ខ្ញុំ <small>· រក្សាទុកលើឧបករណ៍នេះ</small></div>
+  <div id="mine" class="plgrid"></div>
+  <div class="sect" id="siteSect">ចម្រៀងនៅលើគេហទំព័រ</div>
   <div id="pls" class="plgrid"></div>
   <section id="tracks" class="tracks"></section>
+  <details class="owner"><summary>សំរាប់ម្ចាស់គេហទំព័រ៖ របៀបដាក់ចម្រៀង</summary><div class="empty">
+    ១. ដាក់ឯកសារ <code>.mp3</code> ក្នុងថត <code>music/</code> (ថតរងនីមួយៗ = បញ្ជីចាក់មួយ ឧ. <code>music/worship/</code>)<br>
+    ២. នៅលើ GitHub បញ្ជី <code>music/playlist.json</code> នឹងបង្កើតដោយស្វ័យប្រវត្តិ (ឬដំណើរការ <code>python3 scripts/build_playlist.py</code>)<br>
+    មើលការណែនាំពេញលេញក្នុង <code>music/README.md</code>។ សូមដាក់តែចម្រៀងដែលអ្នកមានសិទ្ធិចែកចាយ។</div></details>
 </main>
 
 <footer>
-  សូមដាក់តែចម្រៀងដែលអ្នកមានសិទ្ធិចែកចាយ (ចម្រៀងផ្ទាល់ខ្លួន ឬមានការអនុញ្ញាតពីម្ចាស់) ·
+  បញ្ជីរបស់ខ្ញុំ បទចូលចិត្ត បទដែលបានទាញយក និងបទពីឧបករណ៍ រក្សាទុកតែនៅលើឧបករណ៍នេះប៉ុណ្ណោះ ·
   <a href="https://github.com/khgeo/Khmer_Bible" target="_blank" rel="noopener">GitHub</a> ·
   <a href="https://github.com/khgeo" target="_blank" rel="noopener">YAM Sarath</a>
 </footer>
@@ -83,38 +119,89 @@
 <script src="music.js"></script>
 <script>
 (async function () {
-  let sel = null;
-  const d = await Music.ready, P = Music.playlists;
-  const plAll = { id: '__all', km: 'ចម្រៀងទាំងអស់', en: 'All songs', tracks: Music.all, c: (P.find(p => p.c) || {}).c };
-  if (!P.length) {
-    $('#pls').outerHTML = `<div class="empty"><b>មិនទាន់មានចម្រៀងនៅឡើយ។</b><br>
-      ១. ដាក់ឯកសារ <code>.mp3</code> ក្នុងថត <code>music/</code> (ថតរងនីមួយៗ = បញ្ជីចាក់មួយ ឧ. <code>music/worship/</code>)<br>
-      ២. នៅលើ GitHub បញ្ជីចាក់ <code>music/playlist.json</code> នឹងបង្កើតដោយស្វ័យប្រវត្តិ (ឬដំណើរការ <code>python3 scripts/build_playlist.py</code>)<br>
-      មើលការណែនាំពេញលេញក្នុង <code>music/README.md</code>។</div>`;
-    $('.mhero .acts').style.display = 'none'; return;
-  }
-  const lists = [plAll, ...P];
-  sel = Music.state.pl && lists.some(p => p.id === Music.state.pl) ? Music.state.pl : lists[0].id;
-  const art = p => p.c ? `<img src="${encodeURI(p.c)}" alt="" loading="lazy">` : '<span class="ph">♫</span>';
-  function drawPls() {
-    $('#pls').innerHTML = lists.map(p => `<button class="plc${p.id === sel ? ' on' : ''}" data-id="${esc(p.id)}" type="button"><span class="art">${art(p)}<span class="go" data-play="${esc(p.id)}"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span></span>
-      <b>${esc(p.km)}</b><small>${esc(p.en && p.en !== p.km ? p.en + ' · ' : '')}${kmNum(p.tracks.length)} បទ</small></button>`).join('');
+  const IC = {
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
+    shuf: '<svg viewBox="0 0 24 24"><path d="M16 4h4v4M4 18 20 4M20 16v4h-4M14 14l6 6M4 6l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  };
+  const UI = { sel: null, rename: false, confirm: false };
+  const sync = () => document.body.classList.toggle('offline', navigator.onLine === false);
+  addEventListener('online', sync); addEventListener('offline', sync); sync();
+  await Music.ready;
+  const L = () => Music.lists();
+  if (!UI.sel) { const st = Music.state.pl; UI.sel = L().some(l => l.id === st) ? st : (Music.all.length ? '__all' : '__local'); }
+  const art = l => {
+    if (l.kind === 'new') return '<span class="ph">＋</span>';
+    if (l.kind === 'fav') return '<span class="ph">♥</span>';
+    if (l.kind === 'local' && !l.tracks.some(t => t.c)) return '<span class="ph">📱</span>';
+    const cs = [...new Set(l.tracks.map(t => t.c || (Music.playlists.find(p => p.tracks.includes(t)) || {}).c).filter(Boolean))];
+    if (l.c) return `<img src="${encodeURI(l.c)}" alt="" loading="lazy">`;
+    if (cs.length >= 4) return `<span class="mosaic">${cs.slice(0, 4).map(c => `<img src="${c.startsWith('blob:') ? c : encodeURI(c)}" alt="">`).join('')}</span>`;
+    if (cs.length) return `<img src="${cs[0].startsWith('blob:') ? cs[0] : encodeURI(cs[0])}" alt="" loading="lazy">`;
+    return `<span class="ph">${l.kind === 'mine' ? '♫' : '♫'}</span>`;
+  };
+  const card = l => `<button class="plc ${l.kind}${l.id === UI.sel ? ' on' : ''}" data-id="${esc(l.id)}" type="button"><span class="art">${art(l)}${l.tracks && l.tracks.length ? `<span class="go" data-play="${esc(l.id)}">${IC.play}</span>` : ''}</span>
+    <b>${esc(l.km)}</b><small>${l.kind === 'new' ? 'បង្កើតបញ្ជីផ្ទាល់ខ្លួន' : (l.en && l.en !== l.km ? esc(l.en) + ' · ' : '') + kmNum(l.tracks.length) + ' បទ'}</small></button>`;
+  function drawCards() {
+    const all = L(), mine = all.filter(l => ['fav', 'mine', 'local', 'off'].includes(l.kind));
+    $('#mine').innerHTML = mine.map(card).join('') + card({ id: '__new', kind: 'new', km: '+ បញ្ជីថ្មី', tracks: [] });
+    const site = all.filter(l => l.kind === 'all' || l.kind === 'site');
+    $('#siteSect').hidden = !Music.site.length; $('#pls').hidden = !Music.site.length;
+    $('#pls').innerHTML = Music.site.length ? site.map(card).join('') : '';
   }
   function drawTracks() {
-    const p = lists.find(x => x.id === sel), st = Music.state, total = p.tracks.reduce((a, t) => a + (t.d || 0), 0);
-    $('#tracks').innerHTML = `<h2>${esc(p.km)}</h2><div class="sub">${kmNum(p.tracks.length)} បទ${total ? ' · ' + Music.fmt(total) : ''}${p.note ? ' · ' + esc(p.note) : ''}</div>
-      <table class="tt"><thead><tr><th class="num">#</th><th>ចំណងជើង</th><th class="al">អាល់ប៊ុម</th><th class="d">⏱</th></tr></thead><tbody>
-      ${p.tracks.map((t, i) => `<tr class="${t.id === st.id ? 'cur' : ''}" data-tr="${esc(t.id)}"><td class="num">${t.id === st.id && Music.playing ? Music.eq() : kmNum(i + 1)}</td>
-        <td><div class="tn">${Music.coverHTML(t, 'sm')}<span><b>${esc(t.t)}${t.lyr ? '<i class="ly">ទំនុក</i>' : ''}</b><small>${esc(t.a || '')}</small></span></div></td>
-        <td class="al">${esc(t.al || '')}</td><td class="d">${t.d ? Music.fmt(t.d) : ''}</td></tr>`).join('')}</tbody></table>`;
+    const l = L().find(x => x.id === UI.sel) || L()[0], st = Music.state;
+    if (!l) return;
+    const total = l.tracks.reduce((a, t) => a + (t.d || 0), 0), site = l.tracks.filter(t => !t.local), need = site.filter(t => !Music.isOffline(t.id) && Music.progressOf(t.id) == null);
+    const mine = l.kind === 'mine' || l.kind === 'fav';
+    const title = UI.rename ? `<input id="rn" value="${esc(l.km)}"><button class="mbtn sm" id="rnOk" type="button">រក្សាទុក</button>` : `<h2>${l.kind === 'fav' ? '♥ ' : ''}${esc(l.km)}</h2>`;
+    let acts = '';
+    if (l.tracks.length) acts += `<button class="mbtn sm" data-act="play" type="button">${IC.play}ចាក់ទាំងអស់</button><button class="mbtn sm ghost" data-act="shuf" type="button">${IC.shuf}ចាក់ចៃដន្យ</button>`;
+    if (need.length) acts += `<button class="mbtn sm ghost" data-act="dl" type="button">⬇ ទាញយកទុក (${kmNum(need.length)})</button>`;
+    if (l.kind === 'local') acts += `<button class="mbtn sm" data-act="import" type="button">＋ បញ្ចូលពីឧបករណ៍</button>`;
+    if (l.kind === 'mine' && !UI.rename) acts += `<button class="mbtn sm ghost" data-act="rename" type="button">✎ ប្ដូរឈ្មោះ</button><button class="mbtn sm ${UI.confirm ? 'warn' : 'ghost'}" data-act="del" type="button">${UI.confirm ? 'ចុចម្ដងទៀតដើម្បីលុប' : '🗑 លុបបញ្ជី'}</button>`;
+    const notes = { fav: 'ចុច ♥ លើបទណាមួយ (នៅទីនេះ ឬលើរបារចម្រៀង) ដើម្បីបញ្ចូលក្នុងបញ្ជីនេះ។', mine: 'ចុច ⋯ លើបទណាមួយ → «បញ្ចូលក្នុងបញ្ជី…» ដើម្បីបន្ថែមបទ។ ប្ដូរលំដាប់ដោយ ⋯ → «ផ្លាស់ទីឡើង/ចុះ»។',
+      local: 'ចម្រៀងពីទូរស័ព្ទ ឬកុំព្យូទ័ររបស់អ្នក ត្រូវបានរក្សាទុកតែនៅលើឧបករណ៍នេះ — ស្ដាប់បានពេលគ្មានអ៊ីនធឺណិត ហើយមិនត្រូវបានបញ្ជូនទៅណាឡើយ។ <span id="stor"></span>',
+      off: 'បទដែលបានទាញយក ស្ដាប់បានទោះគ្មានអ៊ីនធឺណិត។ <span id="stor"></span>' };
+    $('#tracks').innerHTML = `<div class="lhead">${title}<div class="sub">${kmNum(l.tracks.length)} បទ${total ? ' · ' + Music.fmt(total) : ''}</div><div class="acts">${acts}</div></div>
+      ${notes[l.kind] && (!l.tracks.length || l.kind === 'local' || l.kind === 'off') ? `<p class="note2">${notes[l.kind]}</p>` : ''}
+      ${l.tracks.length ? `<table class="tt"><thead><tr><th class="num">#</th><th>ចំណងជើង</th><th class="al">អាល់ប៊ុម</th><th class="d">⏱</th><th></th></tr></thead><tbody>
+      ${l.tracks.map((t, i) => { const fav = Music.isFav(t.id); return `<tr class="${t.id === st.id ? 'cur' : ''}" data-tr="${esc(t.id)}"><td class="num">${t.id === st.id && Music.playing ? Music.eq() : kmNum(i + 1)}</td>
+        <td><div class="tn">${Music.coverHTML(t, 'sm')}<span><b>${esc(t.t)}${t.lyr ? '<i class="ly">ទំនុក</i>' : ''}</b><small>${Music.badge(t)}${esc(t.a || '')}</small></span></div></td>
+        <td class="al">${esc(t.al || '')}</td><td class="d">${t.d ? Music.fmt(t.d) : ''}</td>
+        <td class="act"><span><button type="button" class="kbm-b sm kbm-heart${fav ? ' on' : ''}" data-fav="${esc(t.id)}" title="ចូលចិត្ត">${fav ? '♥' : '♡'}</button><button type="button" class="kbm-b sm" data-more="${esc(t.id)}" title="ជម្រើស">⋯</button></span></td></tr>`; }).join('')}</tbody></table>` : ''}`;
+    const sEl = $('#stor'); if (sEl) Music.storage().then(s => { sEl.textContent = s.quota ? `ប្រើ ${Music.mb(s.used)} ក្នុងចំណោម ${Music.mb(s.quota)}` : ''; });
+    const rn = $('#rn'); if (rn) { rn.focus(); rn.select(); rn.onkeydown = e => { if (e.key === 'Enter') $('#rnOk').click(); }; $('#rnOk').onclick = () => { Music.my.rename(l.id, rn.value); UI.rename = false; draw(); }; }
   }
-  drawPls(); drawTracks();
-  $('#pls').onclick = e => { const b = e.target.closest('.plc'); if (!b) return; if (e.target.closest('[data-play]')) Music.playList(b.dataset.id, false); sel = b.dataset.id; drawPls(); drawTracks(); };
-  $('#tracks').onclick = e => { const r = e.target.closest('tr[data-tr]'); if (r) Music.playTrack(r.dataset.tr, sel); };
-  $('#playAll').onclick = () => Music.playList(sel, false);
-  $('#shufAll').onclick = () => Music.playList(sel, true);
-  Music.on(() => drawTracks());
-  setInterval(() => { if (document.querySelector('.tt')) { const st = Music.state; document.querySelectorAll('.tt tr[data-tr]').forEach(r => r.classList.toggle('cur', r.dataset.tr === st.id)); } }, 1500);
+  function draw() { drawCards(); drawTracks(); }
+  draw();
+  document.querySelector('main').addEventListener('click', async e => {
+    const c = e.target.closest('.plc');
+    if (c) {
+      if (c.dataset.id === '__new') {
+        const kbmName = 'បញ្ជីថ្មី ' + kmNum(Music.my.lists().length);
+        UI.sel = Music.my.create(kbmName); UI.rename = true; UI.confirm = false; draw(); return;
+      }
+      if (e.target.closest('[data-play]')) Music.playList(c.dataset.id, false);
+      UI.sel = c.dataset.id; UI.rename = false; UI.confirm = false; draw();
+      if (innerWidth < 700) $('#tracks').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const fav = e.target.closest('[data-fav]'); if (fav) { Music.toggleFav(fav.dataset.fav); return; }
+    const more = e.target.closest('[data-more]'); if (more) { const l = L().find(x => x.id === UI.sel); Music.menu(more.dataset.more, more, l && (l.kind === 'mine' || l.kind === 'fav') ? l.id : ''); return; }
+    const act = e.target.closest('[data-act]');
+    if (act) {
+      const a = act.dataset.act, l = L().find(x => x.id === UI.sel);
+      if (a === 'play') Music.playList(l.id, false);
+      else if (a === 'shuf') Music.playList(l.id, true);
+      else if (a === 'dl') Music.downloadMany(l.tracks.filter(t => !t.local).map(t => t.id));
+      else if (a === 'import') { const n = await Music.pickFiles(); if (n) { UI.sel = '__local'; draw(); } }
+      else if (a === 'rename') { UI.rename = true; drawTracks(); }
+      else if (a === 'del') { if (UI.confirm) { Music.my.remove(l.id); UI.sel = '__all'; UI.confirm = false; Music.toast('បានលុបបញ្ជី'); } else UI.confirm = true; draw(); }
+      return;
+    }
+    const r = e.target.closest('tr[data-tr]'); if (r) Music.playTrack(r.dataset.tr, UI.sel);
+  });
+  let t = 0; Music.on(() => { clearTimeout(t); t = setTimeout(() => { if (!document.activeElement || document.activeElement.id !== 'rn') draw(); }, 60); });
 })();
 </script>
 <script data-goatcounter="https://khgeo.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
