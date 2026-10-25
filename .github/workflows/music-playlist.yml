@@ -1,0 +1,36 @@
+# Rebuilds music/playlist.json whenever songs, lyrics or playlist settings are added or changed in music/.
+name: Music playlist
+on:
+  push:
+    paths:
+      - "music/**.mp3"
+      - "music/**.m4a"
+      - "music/**.ogg"
+      - "music/**.opus"
+      - "music/**.wav"
+      - "music/**.flac"
+      - "music/**.lrc"
+      - "music/**.txt"
+      - "music/**/info.json"
+      - "music/**/cover.*"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet mutagen
+      - run: python scripts/build_playlist.py
+      - name: Commit the playlist
+        run: |
+          git add music/playlist.json music/covers 2>/dev/null || true
+          if git diff --cached --quiet; then echo "playlist unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update music playlist"
+          git push
