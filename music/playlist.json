@@ -1,6 +1,48 @@
 {
  "playlists": [
   {
+   "id": "wedding songs",
+   "km": "Wedding songs",
+   "en": "Wedding songs",
+   "c": "music/covers/5d6f40ee1795.jpg",
+   "tracks": [
+    {
+     "id": "wedding-songs-ក្តីស្នេហ៍ព្រះប្រទាន",
+     "src": "music/wedding songs/ក្តីស្នេហ៍ព្រះប្រទាន.mp3",
+     "t": "ក្តីស្នេហ៍ព្រះប្រទាន",
+     "d": 256,
+     "c": "music/covers/5d6f40ee1795.jpg"
+    },
+    {
+     "id": "wedding-songs-ចម្រៀងសរសើរ-1",
+     "src": "music/wedding songs/ចម្រៀងសរសើរ 1.mp3",
+     "t": "ចម្រៀងសរសើរ | khmer christian wedding song 1",
+     "d": 362,
+     "c": "music/covers/f20c6321ebe6.jpg"
+    },
+    {
+     "id": "wedding-songs-ចម្រៀងសរសើរ-2",
+     "src": "music/wedding songs/ចម្រៀងសរសើរ 2.mp3",
+     "t": "ចម្រៀងសរសើរ | khmer christian wedding song 2",
+     "d": 298,
+     "c": "music/covers/f20c6321ebe6.jpg"
+    },
+    {
+     "id": "wedding-songs-ចម្រៀងសរសើរ-3",
+     "src": "music/wedding songs/ចម្រៀងសរសើរ 3.mp3",
+     "t": "ចម្រៀងសរសើរ | khmer christian wedding song 3",
+     "d": 339
+    },
+    {
+     "id": "wedding-songs-ចម្រៀងសរសើរ-4",
+     "src": "music/wedding songs/ចម្រៀងសរសើរ 4.mp3",
+     "t": "ចម្រៀងសរសើរ | khmer christian wedding song 4",
+     "d": 203,
+     "c": "music/covers/f20c6321ebe6.jpg"
+    }
+   ]
+  },
+  {
    "id": "other",
    "km": "ចម្រៀងផ្សេងៗ",
    "en": "Other songs",
