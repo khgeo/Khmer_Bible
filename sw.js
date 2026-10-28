@@ -8,7 +8,7 @@ const CORE = ['./', 'index.html', 'today.html', 'read.html', 'qa.html', 'prayer.
   'style.css', 'read.css', 'today.css', 'qa.css', 'prayer.css', 'maps.css', 'words.css', 'music.css',
   'common.js', 'music.js', 'app.js', 'read.js', 'today.js', 'qa.js', 'prayer.js', 'maps.js', 'places.js', 'words.js',
   'data/meta.json', 'data/chapter_links.json', 'data/devotionals.json', 'data/prayers.json', 'data/qa.json', 'data/videos.json',
-  'music/playlist.json', 'manifest.json', 'assets/icon.svg', 'assets/icon-192.png'];
+  'music/playlist.json', 'privacy.html', 'manifest.json', 'assets/icon.svg', 'assets/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => Promise.all(CORE.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting()));
