@@ -29,7 +29,19 @@ dated = []
 for d, i, *rest in src.DATED:
     if not re.fullmatch(r"\d\d-\d\d", d): errs.append(f"bad date {d}")
     dated.append(item(i, *rest, date=d))
+# Spurgeon, "Morning and Evening" (public domain), adapted into Khmer — used only for months in "approved"
+spec2 = importlib.util.spec_from_file_location("spurgeon_source", os.path.join(here, "spurgeon_source.py"))
+sp = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(sp)
+taken = {x["date"] for x in dated}
+for d, i, *rest in sp.MORNING:
+    if d in taken: errs.append(f"{d}: date already used by a special-day devotional"); continue
+    it = item(i, *rest, date=d, by=sp.CREDIT)
+    if it["id"] in ids: errs.append("duplicate " + it["id"])
+    ids.add(it["id"]); dated.append(it)
+old = os.path.join(root, "data", "devotionals.json")
+try: approved = json.load(open(old, encoding="utf-8")).get("approved", [])   # keep the months already approved
+except Exception: approved = []
 if errs: print("\n".join(errs)); sys.exit(1)
-out = {"series": [{"id": s, "km": km, "en": en, "n": len(src.DEVOS[s])} for s, km, en in src.SERIES], "items": items, "dated": dated}
+out = {"approved": approved, "series": [{"id": s, "km": km, "en": en, "n": len(src.DEVOS[s])} for s, km, en in src.SERIES], "items": items, "dated": dated}
 json.dump(out, open(os.path.join(root, "data", "devotionals.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-print(f"devotionals.json: {len(items)} devotionals in {len(src.SERIES)} series + {len(dated)} dated")
+print(f"devotionals.json: {len(items)} devotionals in {len(src.SERIES)} series + {len(dated)} dated (Spurgeon: {len(sp.MORNING)}; approved months: {approved or 'none yet'})")

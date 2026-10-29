@@ -39,6 +39,8 @@ GRAPH = "https://graph.facebook.com/v25.0"
 def load_data(bible_path):
     meta = json.load(open(os.path.join(ROOT, "data", "meta.json"), encoding="utf-8"))
     devos = json.load(open(os.path.join(ROOT, "data", "devotionals.json"), encoding="utf-8"))
+    # translated classics (Spurgeon) are used only for approved months, same as today.js
+    devos["dated"] = [x for x in devos.get("dated", []) if not x.get("by") or x["date"][:2] in devos.get("approved", [])]
     js = open(os.path.join(ROOT, "common.js"), encoding="utf-8").read()
     votd = re.findall(r"'([1-3]?[A-Za-z]+\.\d+\.\d+)'", re.search(r"const VOTD = \[(.*?)\];", js, re.S).group(1))
     m = re.search(r"const VOTD_START = '(\d{4}-\d\d-\d\d)'", js)
@@ -84,23 +86,71 @@ def verse(text, ref, numbered=False):
 
 
 # ---------- the verse card ----------
-def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្រចាំថ្ងៃ"):
+# One look per post: morning = warm sunrise, noon = fresh sky with a "?" mark, evening = night sky with moon and stars.
+THEMES = {
+    "morning": {"top": (253, 246, 230), "bot": (246, 222, 190), "accent": "#a8801a", "bar": "#e2c87e", "text": "#1b1d22",
+                "muted": "#6b6f78", "rule": "#dfd3b4", "link": "#1b5fb8"},
+    "noon":    {"top": (244, 250, 252), "bot": (203, 233, 238), "accent": "#0f6b78", "bar": "#7cc4cc", "text": "#13262b",
+                "muted": "#55707a", "rule": "#b5d8de", "link": "#0f5fa8"},
+    "evening": {"top": (14, 24, 56), "bot": (40, 46, 96), "accent": "#e9c46a", "bar": "#b99a4a", "text": "#f4efe2",
+                "muted": "#aab3cf", "rule": "#3c4780", "link": "#9cc3ff"},
+}
+
+
+def backdrop(img, style, F):
+    from PIL import Image, ImageDraw, ImageFilter
+    import random
+    W, H = img.size; T = THEMES[style]; d = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / H; d.line([(0, y), (W, y)], fill=tuple(int(a + (b - a) * t) for a, b in zip(T["top"], T["bot"])))
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0)); g = ImageDraw.Draw(glow)
+    if style == "morning":      # rising sun glow with soft rays, top right
+        cx, cy = W - 150, 120
+        for i in range(14):
+            import math
+            a = math.radians(100 + i * 11)
+            g.polygon([(cx, cy), (cx + 1500 * math.cos(a - .025), cy + 1500 * math.sin(a - .025)),
+                       (cx + 1500 * math.cos(a + .025), cy + 1500 * math.sin(a + .025))], fill=(255, 214, 140, 26))
+        g.ellipse([cx - 230, cy - 230, cx + 230, cy + 230], fill=(255, 200, 110, 90))
+        g.ellipse([cx - 120, cy - 120, cx + 120, cy + 120], fill=(255, 226, 160, 150))
+        glow = glow.filter(ImageFilter.GaussianBlur(28))
+    elif style == "noon":       # big faint question mark and soft circles
+        g.ellipse([-260, H - 520, 300, H + 40], fill=(255, 255, 255, 70))
+        g.ellipse([W - 330, -160, W + 170, 340], fill=(150, 210, 220, 60))
+        glow = glow.filter(ImageFilter.GaussianBlur(45))
+        q = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(q).text((W - 400, H - 1010), "?", font=F("Bold", 700), fill=(15, 107, 120, 26))
+        glow = Image.alpha_composite(glow, q)
+    else:                        # stars (same pattern each day) and a crescent moon
+        rnd = random.Random(1954)
+        for _ in range(140):
+            x, y, r = rnd.randrange(W), rnd.randrange(int(H * .82)), rnd.choice((1, 1, 1, 2, 2, 3))
+            g.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 240, rnd.randrange(70, 200)))
+        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(halo).ellipse([W - 330, 40, W - 90, 280], fill=(255, 236, 170, 70))
+        glow = Image.alpha_composite(glow, halo.filter(ImageFilter.GaussianBlur(40)))
+        m = Image.new("L", (W, H), 0); md = ImageDraw.Draw(m)
+        md.ellipse([W - 280, 90, W - 140, 230], fill=255); md.ellipse([W - 245, 70, W - 115, 200], fill=0)
+        moon = Image.new("RGBA", (W, H), (250, 230, 170, 255)); moon.putalpha(m)
+        glow = Image.alpha_composite(glow, moon)
+    img.paste(Image.alpha_composite(img.convert("RGBA"), glow).convert("RGB"))
+
+
+def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្រចាំថ្ងៃ", style="morning"):
     from PIL import Image, ImageDraw, ImageFont, features
     W, H, M = 1080, 1350, 96
+    T = THEMES[style]
     layout = ImageFont.Layout.RAQM if features.check("raqm") else ImageFont.Layout.BASIC
     if layout != ImageFont.Layout.RAQM: print("warning: Pillow has no libraqm — Khmer may not render correctly", file=sys.stderr)
     F = lambda w, s: ImageFont.truetype(os.path.join(ROOT, "assets", "fonts", f"Battambang-{w}.ttf"), s, layout_engine=layout)
-    img = Image.new("RGB", (W, H), "#fbf6ea"); d = ImageDraw.Draw(img)
-    # soft warm gradient + gold rule
-    for y in range(H):
-        t = y / H; d.line([(0, y), (W, y)], fill=(int(251 - 10 * t), int(246 - 16 * t), int(234 - 30 * t)))
-    d.rectangle([M, 150, M + 90, 156], fill="#a8801a")
+    img = Image.new("RGB", (W, H)); backdrop(img, style, F); d = ImageDraw.Draw(img)
+    d.rectangle([M, 150, M + 90, 156], fill=T["accent"])
     # Battambang lacks a few punctuation glyphs; use plain ones on the picture
     fix = lambda t: t.replace("–", "-").replace("—", "-").replace("·", "-")
     vtext, vlabel, title = fix(vtext), fix(vlabel), fix(title)
     ts = next(z for z in (40, 36, 32, 29, 26) if d.textlength(title, font=F("Bold", z)) <= W - 2 * M or z == 26)
-    d.text((M, 175 + (40 - ts) // 2), title, font=F("Bold", ts), fill="#a8801a")
-    d.text((M, 232), dlabel, font=F("Regular", 30), fill="#6b6f78")
+    d.text((M, 175 + (40 - ts) // 2), title, font=F("Bold", ts), fill=T["accent"])
+    d.text((M, 232), dlabel, font=F("Regular", 30), fill=T["muted"])
     # words in ពគប are separated by zero-width spaces, so wrap on those and on spaces
     def clusters(w):   # split a long Khmer run into letter clusters (a consonant + its marks / subscripts)
         out = []
@@ -127,13 +177,13 @@ def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្�
     # (Battambang has no curly quotes or dashes, so the quote bar and the rule are drawn)
     y0 = y = 330 + (760 - len(lines) * lh) // 2
     for ln in lines:
-        d.text((M + 8, y), ln.replace("\u200b", ""), font=f, fill="#1b1d22"); y += lh
-    d.rounded_rectangle([M - 34, y0 + int(size * .35), M - 26, y - int(size * .2)], radius=4, fill="#e2c87e")
-    d.line([(M + 8, y + 52), (M + 58, y + 52)], fill="#a8801a", width=4)
-    d.text((M + 76, y + 24), vlabel, font=F("Bold", 40), fill="#a8801a")
-    d.line([(M, H - 150), (W - M, H - 150)], fill="#dfd3b4", width=2)
-    d.text((M, H - 125), "ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)", font=F("Regular", 28), fill="#6b6f78")
-    d.text((M, H - 82), site.replace("https://", "").rstrip("/"), font=F("Regular", 28), fill="#1b5fb8")
+        d.text((M + 8, y), ln.replace("\u200b", ""), font=f, fill=T["text"]); y += lh
+    d.rounded_rectangle([M - 34, y0 + int(size * .35), M - 26, y - int(size * .2)], radius=4, fill=T["bar"])
+    d.line([(M + 8, y + 52), (M + 58, y + 52)], fill=T["accent"], width=4)
+    d.text((M + 76, y + 24), vlabel, font=F("Bold", 40), fill=T["accent"])
+    d.line([(M, H - 150), (W - M, H - 150)], fill=T["rule"], width=2)
+    d.text((M, H - 125), "ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)", font=F("Regular", 28), fill=T["muted"])
+    d.text((M, H - 82), site.replace("https://", "").rstrip("/"), font=F("Regular", 28), fill=T["link"])
     img.save(path, optimize=True)
 
 
@@ -152,6 +202,7 @@ def messages(d, meta, text, vref, dv, site):
                  dv["b"],
                  f"💭 សំណួរពិចារណា\n{dv['q']}",
                  f"🙏 ការអធិស្ឋាន\n{dv['p']}",
+                 *([f"✍️ {dv['by']}"] if dv.get("by") else []),
                  f"អានបន្ថែម និងសរសេរកំណត់ហេតុ៖ {site}today.html#devo-{dv['id']}"]
         devo_msg = "\n\n".join(parts)
     return dlabel, vt, vl, verse_msg, devo_msg
@@ -160,6 +211,21 @@ def messages(d, meta, text, vref, dv, site):
 # ---------- extra posts: question of the day (noon) and prayer of the day (evening) ----------
 def day_index(d, n, salt=0):
     return (day_utc(d) - day_utc(dt.date(2026, 1, 1)) + salt) % n
+
+
+def segment(s, text):
+    """Put zero-width spaces between Khmer words (using the words of the Bible itself), so the card
+    can wrap a question written without word breaks at word ends instead of inside a word."""
+    vocab = {w for t in text.values() for w in re.split(r"[\u200b\s]+", t) if w}
+    def run(r):
+        n = len(r); best = [(0, [])] + [None] * n          # fewest pieces; unknown letters cost extra
+        for i in range(n):
+            if best[i] is None: continue
+            for j in range(i + 1, min(n, i + 20) + 1):
+                cost = best[i][0] + (1 if r[i:j] in vocab else 3 * (j - i))
+                if best[j] is None or cost < best[j][0]: best[j] = (cost, best[i][1] + [r[i:j]])
+        return "\u200b".join(best[n][1])
+    return re.sub(r"[\u1780-\u17FF]+", lambda m: run(m.group()), s)
 
 
 def noon_post(d, meta, text, site, dlabel):
@@ -172,7 +238,7 @@ def noon_post(d, meta, text, site, dlabel):
     caption = f"❓ សំណួរប្រចាំថ្ងៃ · {dlabel}\n\n{it['q']}\n\nចម្លើយ និងខគម្ពីរទាំងអស់៖ {site}qa.html#{it['id']}"
     body = "\n\n".join([f"❓ {it['q']}", it["a"], f"📖 ព្រះគម្ពីរចែងថា\n{vlines}",
                          f"សំណួរ និងចម្លើយជិត ៣០០ ទៀត៖ {site}qa.html#{it['id']}"])
-    return {"card": (it["q"], "សំណួរ និងចម្លើយ", "សំណួរប្រចាំថ្ងៃ"), "caption": caption, "body": body, "tag": it["id"]}
+    return {"card": (segment(it["q"], text), "សំណួរ និងចម្លើយ", "សំណួរប្រចាំថ្ងៃ"), "caption": caption, "body": body, "tag": it["id"]}
 
 
 def evening_post(d, meta, text, site, dlabel):
@@ -260,7 +326,7 @@ def main():
     else:
         P = (noon_post if a.slot == "noon" else evening_post)(d, meta, text, site, dlabel)
         ctext, clabel, ctitle = P["card"]
-        card(a.out, ctext, clabel, dlabel, site, title=ctitle)
+        card(a.out, ctext, clabel, dlabel, site, title=ctitle, style=a.slot)
         verse_msg, devo_msg = P["caption"], P["body"]
         print(f"== {d} · {a.slot} · {P['tag']} · card {a.out}\n")
     print(verse_msg, "\n\n----------\n\n", devo_msg or "(no devotional)", sep="")

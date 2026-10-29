@@ -11,6 +11,9 @@ const UI = { planDay: -1, hlFilter: '', hlSort: 'book', confirmStop: false };
   const d = new Date();
   $('#dateline').textContent = `ថ្ងៃ${KM_DAY[d.getDay()]} ទី${kmNum(d.getDate())} ខែ${KM_MONTH[d.getMonth()]} ឆ្នាំ${kmNum(d.getFullYear())} · ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប)`;
   DEVOS = await fetch('data/devotionals.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  // translated classics (e.g. Spurgeon) are used only for months listed in "approved" (after a pastor has read them)
+  // (open today.html?review to read them before approval)
+  if (DEVOS && DEVOS.dated && !/[?&]review\b/.test(location.search)) DEVOS.dated = DEVOS.dated.filter(x => !x.by || (DEVOS.approved || []).includes(x.date.slice(0, 2)));
   const picked = fromHashDevo();
   renderAll();
   if (picked) setTimeout(() => $('#devo').scrollIntoView({ block: 'start' }), 50);
@@ -76,7 +79,7 @@ function renderDevo() {
   $('#devo').innerHTML = `<div class="kicker">ការតាំងចិត្តប្រចាំថ្ងៃ · DAILY DEVOTIONAL</div>
     <div class="dnav">${picked ? `<button data-dv="today" class="dtoday">‹ ត្រឡប់ទៅថ្ងៃនេះ</button>` :
       `<button data-dv="-1" aria-label="ថ្ងៃមុន">‹</button><span>${isToday ? '<b>ថ្ងៃនេះ</b> · ' : ''}${dateLbl}</span><button data-dv="1" aria-label="ថ្ងៃបន្ទាប់">›</button>${isToday ? '' : '<button data-dv="today" class="dtoday">ថ្ងៃនេះ</button>'}`}</div>
-    ${ser ? `<div class="dser">ស៊េរី៖ <b>${esc(ser.km)}</b> · ${kmNum(dv.n)}/${kmNum(ser.n)}</div>` : dv && dv.date ? '<div class="dser">ការតាំងចិត្តពិសេស</div>' : ''}
+    ${ser ? `<div class="dser">ស៊េរី៖ <b>${esc(ser.km)}</b> · ${kmNum(dv.n)}/${kmNum(ser.n)}</div>` : dv && dv.by ? `<div class="dser">${esc(dv.by)}</div>` : dv && dv.date ? '<div class="dser">ការតាំងចិត្តពិសេស</div>' : ''}
     <h2>${dv && dv.t ? esc(dv.t) : 'ខគម្ពីរប្រចាំថ្ងៃ'}</h2>
     ${r ? `<blockquote>${vt(r.g)}<cite>— ${esc(B.label(r.g))}</cite></blockquote>` : ''}
     ${sp ? `<details class="ctx"${dv && dv.read ? '' : ''}><summary>📖 អាន៖ ${esc(plabel)}</summary><p>${passage}</p>
@@ -119,7 +122,8 @@ function seriesList(done, nDone, total, cur) {
     <div class="dbar"><i style="width:${pct}%"></i></div>
     ${DEVOS.series.map(s => `<h4>${esc(s.km)} <small>${esc(s.en)}</small></h4><ol>${DEVOS.items.filter(x => x.s === s.id).map(x =>
       `<li class="${done[x.id] ? 'done' : ''}${cur && cur.id === x.id ? ' cur' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${esc(spanLabel(x.r))}</small></li>`).join('')}</ol>`).join('')}
-    ${DEVOS.dated && DEVOS.dated.length ? `<h4>ថ្ងៃពិសេស</h4><ol>${DEVOS.dated.map(x => `<li class="${done[x.id] ? 'done' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${kmNum(+x.date.slice(3))}/${kmNum(+x.date.slice(0, 2))}</small></li>`).join('')}</ol>` : ''}
+    ${DEVOS.dated && DEVOS.dated.some(x => x.by) ? `<h4>${esc(DEVOS.dated.find(x => x.by).by)}</h4><ol>${DEVOS.dated.filter(x => x.by).map(x => `<li class="${done[x.id] ? 'done' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${kmNum(+x.date.slice(3))}/${kmNum(+x.date.slice(0, 2))}</small></li>`).join('')}</ol>` : ''}
+    ${DEVOS.dated && DEVOS.dated.some(x => !x.by) ? `<h4>ថ្ងៃពិសេស</h4><ol>${DEVOS.dated.filter(x => !x.by).map(x => `<li class="${done[x.id] ? 'done' : ''}"><a href="#devo-${x.id}" data-pick="${x.id}">${esc(x.t)}</a> <small>${kmNum(+x.date.slice(3))}/${kmNum(+x.date.slice(0, 2))}</small></li>`).join('')}</ol>` : ''}
   </details>`;
 }
 function prayBox() {
