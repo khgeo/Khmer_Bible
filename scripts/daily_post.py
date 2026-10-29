@@ -72,7 +72,7 @@ def verse(text, ref):
 
 
 # ---------- the verse card ----------
-def card(path, vtext, vlabel, dlabel, site):
+def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្រចាំថ្ងៃ"):
     from PIL import Image, ImageDraw, ImageFont, features
     W, H, M = 1080, 1350, 96
     layout = ImageFont.Layout.RAQM if features.check("raqm") else ImageFont.Layout.BASIC
@@ -83,13 +83,27 @@ def card(path, vtext, vlabel, dlabel, site):
     for y in range(H):
         t = y / H; d.line([(0, y), (W, y)], fill=(int(251 - 10 * t), int(246 - 16 * t), int(234 - 30 * t)))
     d.rectangle([M, 150, M + 90, 156], fill="#a8801a")
-    d.text((M, 175), "ខគម្ពីរប្រចាំថ្ងៃ", font=F("Bold", 40), fill="#a8801a")
+    d.text((M, 175), title, font=F("Bold", 40), fill="#a8801a")
     d.text((M, 232), dlabel, font=F("Regular", 30), fill="#6b6f78")
     # words in ពគប are separated by zero-width spaces, so wrap on those and on spaces
+    # Battambang lacks a few punctuation glyphs; use plain ones on the picture
+    fix = lambda t: t.replace("–", "-").replace("—", "-").replace("·", "-")
+    vtext, vlabel, title = fix(vtext), fix(vlabel), fix(title)
+    def clusters(w):   # split a long Khmer run into letter clusters (a consonant + its marks / subscripts)
+        out = []
+        for ch in w:
+            if out and not ("\u1780" <= ch <= "\u17B3" and not out[-1].endswith("\u17D2")):
+                out[-1] += ch
+            else:
+                out.append(ch)
+        return out
     words = [w for w in re.split(r"(\u200b| )", vtext) if w]
     for size in (64, 58, 52, 47, 42, 38, 34):
         f = F("Regular", size); lines, cur = [], ""
+        seq = []
         for w in words:
+            seq += clusters(w) if d.textlength(w, font=f) > W - 2 * M - 8 else [w]
+        for w in seq:
             tryl = cur + w
             if d.textlength(tryl.replace("\u200b", ""), font=f) > W - 2 * M - 8 and cur.strip():
                 lines.append(cur.strip(" \u200b")); cur = w.lstrip(" \u200b")
@@ -128,6 +142,37 @@ def messages(d, meta, text, vref, dv, site):
                  f"អានបន្ថែម និងសរសេរកំណត់ហេតុ៖ {site}today.html#devo-{dv['id']}"]
         devo_msg = "\n\n".join(parts)
     return dlabel, vt, vl, verse_msg, devo_msg
+
+
+# ---------- extra posts: question of the day (noon) and prayer of the day (evening) ----------
+def day_index(d, n, salt=0):
+    return (day_utc(d) - day_utc(dt.date(2026, 1, 1)) + salt) % n
+
+
+def noon_post(d, meta, text, site, dlabel):
+    qa = json.load(open(os.path.join(ROOT, "data", "qa.json"), encoding="utf-8"))
+    items = [x for x in qa["items"] if not x.get("d") and not x.get("auto")]   # skip debated and number-fact questions
+    # spread the categories: walk the list with a stride so neighbouring days get different topics
+    it = items[(day_index(d, len(items)) * 37) % len(items)]
+    vrefs = it["r"][:2]
+    vlines = "\n\n".join(f"«{verse(text, r)}»\n— {label(meta, r)}" for r in vrefs)
+    caption = f"❓ សំណួរប្រចាំថ្ងៃ · {dlabel}\n\n{it['q']}\n\nចម្លើយ និងខគម្ពីរទាំងអស់៖ {site}qa.html#{it['id']}"
+    body = "\n\n".join([f"❓ {it['q']}", it["a"], f"📖 ព្រះគម្ពីរចែងថា\n{vlines}",
+                         f"សំណួរ និងចម្លើយជិត ៣០០ ទៀត៖ {site}qa.html#{it['id']}"])
+    return {"card": (it["q"], "សំណួរ និងចម្លើយ", "សំណួរប្រចាំថ្ងៃ"), "caption": caption, "body": body, "tag": it["id"]}
+
+
+def evening_post(d, meta, text, site, dlabel):
+    pr = json.load(open(os.path.join(ROOT, "data", "prayers.json"), encoding="utf-8"))
+    topics = [t for t in pr["topics"] if t["id"] not in ("morning", "meal")]   # these don't suit an evening post
+    tp = topics[day_index(d, len(topics), 7)]
+    r0 = tp["r"][0]
+    vlines = "\n\n".join(f"«{verse(text, r)}»\n— {label(meta, r)}" for r in tp["r"][:2])
+    caption = f"🙏 អធិស្ឋានជាមួយគ្នា · {tp['i']} {tp['t']}\n\n«{verse(text, r0)}»\n— {label(meta, r0)}"
+    body = "\n\n".join([f"🌙 សេចក្ដីអធិស្ឋានពេលល្ងាច · {tp['i']} {tp['t']}", f"📖 ខគម្ពីរសំរាប់អធិស្ឋាន\n{vlines}",
+                         f"🙏 {tp['p']}", "សរសេរ «អាម៉ែន» ឬសំណូមអធិស្ឋានរបស់អ្នក នៅក្នុង comment — យើងនឹងអធិស្ឋានជាមួយគ្នា។",
+                         f"របៀបអធិស្ឋាន និងសេចក្ដីអធិស្ឋានផ្សេងទៀត៖ {site}prayer.html#topic-{tp['id']}"])
+    return {"card": (verse(text, r0), label(meta, r0), "អធិស្ឋានពេលល្ងាច៖ " + tp["t"]), "caption": caption, "body": body, "tag": tp["id"]}
 
 
 # ---------- senders ----------
@@ -184,14 +229,22 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="only print the messages and save the card")
     ap.add_argument("--out", default="daily_card.png")
     ap.add_argument("--only", choices=["telegram", "facebook"], help="post to one channel only")
+    ap.add_argument("--slot", choices=["morning", "noon", "evening"], default="morning", help="morning = verse + devotional, noon = question of the day, evening = prayer")
     a = ap.parse_args()
     site = os.environ.get("SITE_URL", "https://khgeo.github.io/Khmer_Bible/").rstrip("/") + "/"
     d = dt.date.fromisoformat(a.date) if a.date else dt.datetime.now(TZ).date()
     meta, devos, votd, text = load_data(a.bible)
     vref, dv = pick(d, devos, votd)
     dlabel, vt, vl, verse_msg, devo_msg = messages(d, meta, text, vref, dv, site)
-    card(a.out, vt, vl, dlabel, site)
-    print(f"== {d} · verse {vref} · devotional {dv and dv['id']} · card {a.out}\n")
+    if a.slot == "morning":
+        card(a.out, vt, vl, dlabel, site)
+        print(f"== {d} · morning · verse {vref} · devotional {dv and dv['id']} · card {a.out}\n")
+    else:
+        P = (noon_post if a.slot == "noon" else evening_post)(d, meta, text, site, dlabel)
+        ctext, clabel, ctitle = P["card"]
+        card(a.out, ctext, clabel, dlabel, site, title=ctitle)
+        verse_msg, devo_msg = P["caption"], P["body"]
+        print(f"== {d} · {a.slot} · {P['tag']} · card {a.out}\n")
     print(verse_msg, "\n\n----------\n\n", devo_msg or "(no devotional)", sep="")
     if a.dry_run: return
     sent, failed = 0, []
@@ -207,7 +260,19 @@ def main():
             try: facebook(fb_p, fb_t, a.out, verse_msg, devo_msg); sent += 1
             except Exception as e: failed.append(f"Facebook: {e}")
         else: print("Facebook: not configured, skipped")
-    for f in failed: print("FAILED", f, file=sys.stderr)
+    hints = {"#190": "the Page token is expired or was cancelled - make a new extended token and update FB_PAGE_TOKEN",
+             "#200": "the token may not post to this Page - redo the token step, tick the Page and allow pages_manage_posts",
+             "#10": "the app lacks permission - add pages_manage_posts to the app's use case and make a new token",
+             "#100": "check FB_PAGE_ID (it must be the Page's number)",
+             "Unauthorized": "check TELEGRAM_BOT_TOKEN", "chat not found": "check TELEGRAM_CHAT_ID and add the bot as channel admin"}
+    print("\n========== RESULT ==========")
+    for f in failed:
+        print("FAILED", f)
+        for k, h in hints.items():
+            if k in f: print("  -> hint:", h)
+    if not sent and not failed: print("Nothing was posted: no Telegram or Facebook secrets were found (check the secret names).")
+    if sent: print(f"OK: posted to {sent} channel(s)")
+    sys.stdout.flush()
     if failed or not sent: sys.exit(1)
 
 
