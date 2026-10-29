@@ -2,12 +2,12 @@
    Pages, styles, scripts and data: network first (always fresh when online), cached copy when offline.
    Fonts and libraries from CDNs: cache first. Songs are NOT handled here — the player keeps the songs
    you save for offline in its own cache ("kb-music-audio") and on-device songs in IndexedDB. */
-const SHELL = 'kb-shell-v1';
+const SHELL = 'kb-shell-v2';
 const KEEP = [SHELL, 'kb-music-audio', 'pkb1954-v1'];
 const CORE = ['./', 'index.html', 'today.html', 'read.html', 'qa.html', 'prayer.html', 'music.html', 'videos.html', 'maps.html', 'words.html',
   'style.css', 'read.css', 'today.css', 'qa.css', 'prayer.css', 'maps.css', 'words.css', 'music.css',
   'common.js', 'music.js', 'app.js', 'read.js', 'today.js', 'qa.js', 'prayer.js', 'maps.js', 'places.js', 'words.js',
-  'data/meta.json', 'data/chapter_links.json', 'data/devotionals.json', 'data/prayers.json', 'data/qa.json', 'data/videos.json',
+  'data/meta.json', 'data/chapter_links.json', 'data/devotionals.json', 'data/prayers.json', 'data/evening.json', 'data/qa.json', 'data/videos.json',
   'music/playlist.json', 'privacy.html', 'manifest.json', 'assets/icon.svg', 'assets/icon-192.png'];
 
 self.addEventListener('install', e => {

@@ -2,7 +2,12 @@
 """Post the verse of the day and the daily devotional to a Telegram channel and/or a Facebook Page.
 
 Picks exactly what the website shows on that date (same verse list as common.js, same devotional
-cycle as today.js), takes the verse text from ពគប, draws a 1080x1350 verse card and posts:
+cycle as today.js, same evening plan as prayer.html), takes the verse text from ពគប, draws a
+1080x1350 card and posts. Three posts a day (--slot):
+  morning  verse of the day (about 5 years of different verses) + the devotional
+  noon     question of the day (data/qa.json)
+  evening  pray the Scriptures: a short passage + a prayer prompt (data/evening.json, about 6 years)
+
 
   Telegram:  the card (caption = the verse) and then the devotional as a text message
   Facebook:  one photo post — the card, with the verse and the devotional as the caption
@@ -36,6 +41,8 @@ def load_data(bible_path):
     devos = json.load(open(os.path.join(ROOT, "data", "devotionals.json"), encoding="utf-8"))
     js = open(os.path.join(ROOT, "common.js"), encoding="utf-8").read()
     votd = re.findall(r"'([1-3]?[A-Za-z]+\.\d+\.\d+)'", re.search(r"const VOTD = \[(.*?)\];", js, re.S).group(1))
+    m = re.search(r"const VOTD_START = '(\d{4}-\d\d-\d\d)'", js)
+    votd = (votd, dt.date.fromisoformat(m.group(1)) if m else dt.date(1970, 1, 1))
     osis = [b["osis"] for b in meta["books"]]
     text = {}
     for bk in ET.parse(bible_path).getroot().iter("book"):
@@ -51,7 +58,8 @@ def day_utc(d):  # days since 1970-01-01 for a calendar date (matches Date.UTC(.
 
 
 def pick(d, devos, votd):
-    vref = votd[day_utc(d) % len(votd)]
+    lst, start = votd
+    vref = lst[(d - start).days % len(lst)]                   # same as votdRef() in common.js
     mmdd = d.strftime("%m-%d")
     dv = next((x for x in devos.get("dated", []) if x["date"] == mmdd), None)
     if not dv and devos.get("items"):
@@ -65,10 +73,14 @@ def label(meta, ref):
     return f"{b['km']} {km(m.group(2))}:{km(m.group(3))}" + (f"–{km(m.group(4))}" if m.group(4) else "")
 
 
-def verse(text, ref):
+def clean(t):  # drop the psalm "Selah" mark and the end-of-book sign for posting
+    return re.sub(r"\s*[–-]?\s*បង្អង់\s*$", "", t.replace(":៚", "").replace("៕", "។")).strip()
+
+
+def verse(text, ref, numbered=False):
     m = re.fullmatch(r"([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)(?:-(\d+))?", ref)
     b, c, v = m.group(1), int(m.group(2)), int(m.group(3)); v2 = int(m.group(4) or v)
-    return " ".join(text[(b, c, x)] for x in range(v, v2 + 1) if (b, c, x) in text)
+    return " ".join((f"{km(x)} " if numbered else "") + clean(text[(b, c, x)]) for x in range(v, v2 + 1) if (b, c, x) in text)
 
 
 # ---------- the verse card ----------
@@ -83,12 +95,13 @@ def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្�
     for y in range(H):
         t = y / H; d.line([(0, y), (W, y)], fill=(int(251 - 10 * t), int(246 - 16 * t), int(234 - 30 * t)))
     d.rectangle([M, 150, M + 90, 156], fill="#a8801a")
-    d.text((M, 175), title, font=F("Bold", 40), fill="#a8801a")
-    d.text((M, 232), dlabel, font=F("Regular", 30), fill="#6b6f78")
-    # words in ពគប are separated by zero-width spaces, so wrap on those and on spaces
     # Battambang lacks a few punctuation glyphs; use plain ones on the picture
     fix = lambda t: t.replace("–", "-").replace("—", "-").replace("·", "-")
     vtext, vlabel, title = fix(vtext), fix(vlabel), fix(title)
+    ts = next(z for z in (40, 36, 32, 29, 26) if d.textlength(title, font=F("Bold", z)) <= W - 2 * M or z == 26)
+    d.text((M, 175 + (40 - ts) // 2), title, font=F("Bold", ts), fill="#a8801a")
+    d.text((M, 232), dlabel, font=F("Regular", 30), fill="#6b6f78")
+    # words in ពគប are separated by zero-width spaces, so wrap on those and on spaces
     def clusters(w):   # split a long Khmer run into letter clusters (a consonant + its marks / subscripts)
         out = []
         for ch in w:
@@ -163,16 +176,21 @@ def noon_post(d, meta, text, site, dlabel):
 
 
 def evening_post(d, meta, text, site, dlabel):
-    pr = json.load(open(os.path.join(ROOT, "data", "prayers.json"), encoding="utf-8"))
-    topics = [t for t in pr["topics"] if t["id"] not in ("morning", "meal")]   # these don't suit an evening post
-    tp = topics[day_index(d, len(topics), 7)]
-    r0 = tp["r"][0]
-    vlines = "\n\n".join(f"«{verse(text, r)}»\n— {label(meta, r)}" for r in tp["r"][:2])
-    caption = f"🙏 អធិស្ឋានជាមួយគ្នា · {tp['i']} {tp['t']}\n\n«{verse(text, r0)}»\n— {label(meta, r0)}"
-    body = "\n\n".join([f"🌙 សេចក្ដីអធិស្ឋានពេលល្ងាច · {tp['i']} {tp['t']}", f"📖 ខគម្ពីរសំរាប់អធិស្ឋាន\n{vlines}",
-                         f"🙏 {tp['p']}", "សរសេរ «អាម៉ែន» ឬសំណូមអធិស្ឋានរបស់អ្នក នៅក្នុង comment — យើងនឹងអធិស្ឋានជាមួយគ្នា។",
-                         f"របៀបអធិស្ឋាន និងសេចក្ដីអធិស្ឋានផ្សេងទៀត៖ {site}prayer.html#topic-{tp['id']}"])
-    return {"card": (verse(text, r0), label(meta, r0), "អធិស្ឋានពេលល្ងាច៖ " + tp["t"]), "caption": caption, "body": body, "tag": tp["id"]}
+    """Pray the Scriptures: one short passage a day from data/evening.json (Psalms + New Testament + OT prayers)."""
+    ev = json.load(open(os.path.join(ROOT, "data", "evening.json"), encoding="utf-8"))
+    n = (d - dt.date.fromisoformat(ev["start"])).days
+    it = ev["items"][n % len(ev["items"])]
+    prompt = ev["prompts"][n % len(ev["prompts"])]
+    plabel = " · ".join(label(meta, r) for r in it["r"])
+    head = it.get("t") or plabel
+    passage = "\n\n".join(f"📖 {label(meta, r)}\n{verse(text, r, numbered=True)}" for r in it["r"])
+    k = it["k"]
+    caption = f"🌙 អធិស្ឋានតាមព្រះបន្ទូល · {head}\n\n«{verse(text, k)}»\n— {label(meta, k)}"
+    body = "\n\n".join([f"🌙 អធិស្ឋានពេលល្ងាច · {head}", "ចូរអានព្រះបន្ទូលនេះយឺតៗ ហើយយកវាមកអធិស្ឋាន៖", passage,
+                          f"🙏 {prompt}", "សរសេរ «អាម៉ែន» ឬសំណូមអធិស្ឋានរបស់អ្នក នៅក្នុង comment — យើងនឹងអធិស្ឋានជាមួយគ្នា។",
+                          f"អានជំពូកពេញ៖ {site}read.html#{it['r'][0].split('-')[0]}\nរបៀបអធិស្ឋាន៖ {site}prayer.html#tonight"])
+    return {"card": (verse(text, k), label(meta, k), "អធិស្ឋានពេលល្ងាច៖ " + head), "caption": caption, "body": body,
+            "tag": f"evening#{n % len(ev['items']) + 1}/{len(ev['items'])} {plabel}"}
 
 
 # ---------- senders ----------

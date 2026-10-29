@@ -23,7 +23,7 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Reading progress:** a chapter counts as read once you reach its end; see your % of the whole Bible and a chapter grid per book.
 - **Personal reading statistics** — minutes read today (with a daily goal ring), reading streak 🔥 and longest streak, days read this week and per week, total time, and a 26-week calendar heat-map. Time counts only while the reader page is visible *and* you have scrolled, tapped or typed within the last 90 seconds, so an idle tab adds nothing. The streak also shows on the «បន្តអាន» button on every page.
 - **Private by design:** all of this stays in the reader's own browser (localStorage) and is never sent anywhere. «រក្សាទុកច្បាប់ចម្លង» downloads a backup file that can be restored («ស្ដារ») on another phone or computer; restoring merges with existing data.
-- **Verse of the day** (also on the arcs page).
+- **Verse of the day** (also on the arcs page) — 1,945 hand-checked verses, about **5 years without a repeat** (chosen from the best-known verses by OpenBible.info cross-reference votes, then read through one by one to leave out fragments and verses that only make sense in context). The list is `VOTD` in `common.js`, day 0 = `VOTD_START` (2026-11-01).
 
 ## Today (`today.html`)
 - **Daily devotional** — 60 short devotionals in Khmer, in 6 ten-day series (Who is God? · Knowing Jesus · Salvation and grace · The Word and prayer · Living as God's children · Hope in hard times), plus special ones for New Year, Christmas Eve, Christmas and New Year's Eve. Everyone sees the same devotional on a given date; the cycle repeats every 60 days. Each has a key verse and a passage to read (shown live from ពគប), a short reflection, a question to think about and a prayer.
@@ -49,6 +49,7 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Guided prayer** — a step-by-step overlay (be still → A → C → T → S → the Lord's Prayer) with an optional 1/2/3-minute gentle timer per step. Link: `prayer.html#guided`.
 - **The Lord's Prayer** line by line (ម៉ាថាយ ៦:៩–១៣), with a short explanation of each line.
 - **Pray for…** — 24 topics (morning, anxiety, the sick, grief, family, students, work, Cambodia and its leaders, friends who don't know God, …), each with verses to pray and a sample prayer that can be copied, shared or added to your list. Link: `prayer.html#topic-anxiety`.
+- **Tonight: pray the Scriptures** — the same short passage and prayer prompt as the evening post (‹ › to see other days). Link: `prayer.html#tonight`.
 - **Prayers in the Bible** — 25 prayers (Hannah, Solomon, Nehemiah, Daniel, Jonah, Mary, Gethsemane, John 17, Paul's prayers…) shown live from ពគប.
 - **My prayer list** — private requests (stored only in this browser, key `kb-prayers`): mark “I prayed today”, record when and how God answered. Included in the reader's backup/restore.
 - Source: `scripts/prayer_source.py`; rebuild with `python3 scripts/build_prayer.py` (validates every reference against the Khmer versification, e.g. Jonah's prayer is យ៉ូណាស ២:២–១០ in ពគប). Sample prayers are simple starting points — please have a pastor review them.
@@ -99,7 +100,15 @@ A service worker (`sw.js`) keeps a copy of every page you open, so the site open
 
 ## Daily posts to Telegram / Facebook
 
-Every morning at about 6:00 (Cambodia time) a GitHub Action (`.github/workflows/daily-post.yml`) posts **the same verse of the day and daily devotional the website shows**:
+Three times a day a GitHub Action (`.github/workflows/daily-post.yml`) posts **exactly what the website shows that day**:
+
+| Time | Post | Different posts before anything repeats |
+|---|---|---|
+| ~6:00 | verse of the day + devotional | verse: **~5 years** (1,945 verses) · devotional: 60 days (+ 4 special days) |
+| ~12:00 | question of the day (Q&A + its verses) | 255 days |
+| ~19:00 | pray the Scriptures — a short passage + a prayer prompt (`prayer.html#tonight`) | **~6 years** (2,203 evenings) |
+
+The evening plan (`data/evening.json`, built by `scripts/build_evening.py`) walks through **all the Psalms** (short parts; Psalm 119 in half-stanzas), **the New Testament** (about 5 verses a night, in a reading order that starts with John) and the **Old Testament prayers** from the Prayer page, with 14 rotating prompts (praise, thanks, confession, praying for others, Cambodia, …). About one evening in four is a Psalm, so the Psalms last the whole plan.
 
 - **Telegram channel:** a verse picture (1080×1350, Khmer text from ពគប) with the verse as caption, then the devotional as a message with a «អាននៅលើគេហទំព័រ» button.
 - **Facebook Page:** one photo post — the verse picture, with the verse and the devotional as the text.
@@ -128,7 +137,7 @@ It runs on GitHub's servers for free; your computer doesn't need to be on. Set u
 
 **Test it:** **Actions → Daily verse & devotional → Run workflow**. With *Preview only* ticked it posts nothing — open the run to read the messages and download the picture (artifact *daily-card*). Untick it to post for real. You can also preview any date (e.g. `2026-12-25`) or post to one channel only.
 
-Notes: change the time in the `cron:` line (it is in UTC: Cambodia = UTC+7). GitHub turns scheduled workflows off after 60 days without any commit to the repository — you'll get an email; click *Enable workflow* (or make any small commit). Keep tokens only in GitHub secrets, never in files. Each post credits ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប) and links back to the site; the ពគប text is © BFBS/UBS 1954, 1962, so check with the Bible Society of Cambodia if you plan large-scale or commercial use.
+Each post goes out only **once per day**: if GitHub starts a scheduled run late, or you already posted that slot by hand, the extra run is skipped (tick *Post again* in **Run workflow** to force it). Notes: each post has its own `cron:` line in `.github/workflows/daily-post.yml` — delete a line to stop that post, or change the time (it is in UTC: Cambodia = UTC+7). GitHub turns scheduled workflows off after 60 days without any commit to the repository — you'll get an email; click *Enable workflow* (or make any small commit). Keep tokens only in GitHub secrets, never in files. Each post credits ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប) and links back to the site; the ពគប text is © BFBS/UBS 1954, 1962, so check with the Bible Society of Cambodia if you plan large-scale or commercial use.
 
 ## “Live connection” to ពគប
 The Khmer text is **not stored in this repo**. On first visit the browser fetches it in a Web Worker from the [Beblia/Holy-Bible-XML-Format](https://github.com/Beblia/Holy-Bible-XML-Format) GitHub repository (`KhmerBFBSBible.xml`, via jsDelivr with raw.githubusercontent as fallback), then keeps it in the browser cache so later visits are instant. The arcs work immediately even before the text arrives.
@@ -174,6 +183,7 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `data/qa.json` | Built Q&A (from `scripts/qa_source.py`) |
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
+| `data/evening.json`, `scripts/build_evening.py` | Evening “pray the Scriptures” plan (~6 years) |
 | `sw.js`, `manifest.json`, `assets/icon-*.png` | Offline copy of the site, install to home screen |
 | `music.html`, `music.js`, `music.css`, `music/`, `scripts/build_playlist.py`, `.github/workflows/music-playlist.yml` | Music player and playlists |
 | `.github/workflows/daily-post.yml`, `scripts/daily_post.py`, `scripts/fb_page_token.py` | Daily Telegram / Facebook posts |

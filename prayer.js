@@ -2,7 +2,7 @@
    Verses are loaded live from ពគប; the list is stored only in this browser (kb-prayers). */
 'use strict';
 
-let B, P, TEXT = null;
+let B, P, EV = null, TEXT = null;
 const MAXV = 12;
 
 // ---------- private prayer list ----------
@@ -21,7 +21,8 @@ const today = () => { const d = new Date(), p = n => String(n).padStart(2, '0');
 const kmDate = ms => { const d = new Date(ms); return `${kmNum(d.getDate())}/${kmNum(d.getMonth() + 1)}/${kmNum(d.getFullYear())}`; };
 
 (async function init() {
-  [B, P] = await Promise.all([Bible.load(), fetch('data/prayers.json').then(r => r.json())]);
+  [B, P, EV] = await Promise.all([Bible.load(), fetch('data/prayers.json').then(r => r.json()),
+    fetch('data/evening.json').then(r => r.json()).catch(() => null)]);
   renderStatic(); renderList();
   $('#startGuided').onclick = () => Guided.open();
   $('#addForm').onsubmit = e => {
@@ -70,7 +71,7 @@ function renderStatic() {
     <p>${esc(t.x)}</p>${t.r.map(r => verse(r, 3)).join('')}</details>`).join('');
   $('#lordsList').innerHTML = P.lords.map(l => `<li><p class="lv">${vtext(l.r)}</p><small class="lr">${esc(vlabel(l.r))}</small><p class="lx">${esc(l.x)}</p></li>`).join('');
   $('#tgrid').innerHTML = P.topics.map(t => `<a class="tcard${TOPIC === t.id ? ' on' : ''}" href="#topic-${t.id}" data-t="${t.id}"><span class="ti">${t.i}</span><b>${esc(t.t)}</b><small>${esc(t.en)}</small></a>`).join('');
-  renderTopic(); renderBible();
+  renderTopic(); renderBible(); renderTonight();
 }
 
 let TOPIC = null;
@@ -86,6 +87,32 @@ function renderTopic() {
   el.querySelector('[data-close]').onclick = () => { TOPIC = null; history.replaceState(null, '', '#topics'); renderTopic(); };
   el.querySelectorAll('[data-share]').forEach(b => b.onclick = () => share(b, t.t, `${t.t}\n\n${t.p}\n\n${t.r.map(r => vlabel(r) + ' ' + plain(r)).join('\n')}`));
   el.querySelector('[data-addlist]').onclick = e => { PrayerList.add(t.t + ' — ' + t.en, ''); renderList(); e.target.textContent = 'បានបញ្ចូល ✓'; track('prayer-add'); };
+}
+
+// ---------- tonight: pray the Scriptures (same plan as the evening post — data/evening.json) ----------
+const TN = { off: 0 };
+function evIndex(off = 0) {
+  const s = EV.start.split('-').map(Number), d = new Date();
+  const day = Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() + off) - Date.UTC(s[0], s[1] - 1, s[2])) / 864e5);
+  return day;
+}
+function renderTonight() {
+  const el = $('#tonightBox'); if (!el) return;
+  if (!EV) { el.innerHTML = ''; return; }
+  const n = evIndex(TN.off), N = EV.items.length, it = EV.items[((n % N) + N) % N], pr = EV.prompts[((n % EV.prompts.length) + EV.prompts.length) % EV.prompts.length];
+  const d = new Date(); d.setDate(d.getDate() + TN.off);
+  const when = TN.off === 0 ? 'យប់នេះ' : TN.off === -1 ? 'ម្សិលមិញ' : TN.off === 1 ? 'ស្អែក' : `${kmNum(d.getDate())}/${kmNum(d.getMonth() + 1)}/${kmNum(d.getFullYear())}`;
+  const head = it.t || it.r.map(vlabel).join(' · ');
+  el.innerHTML = `<div class="tn">
+    <div class="tn-nav"><button data-d="-1" type="button" aria-label="Previous">‹</button><b>${esc(when)}</b><button data-d="1" type="button" aria-label="Next">›</button>
+      ${TN.off ? '<button class="tn-today" data-d="0" type="button">យប់នេះ</button>' : ''}<small>${kmNum(((n % N) + N) % N + 1)} / ${kmNum(N)}</small></div>
+    ${it.t ? `<h3>${esc(it.t)}</h3>` : ''}
+    ${it.r.map(r => verse(r, 12)).join('')}
+    <p class="tn-pr">🙏 ${esc(pr)}</p>
+    <div class="acts2"><button data-share data-hash="tonight" type="button">ចែករំលែក</button><button data-guided type="button">អធិស្ឋានជាមួយការណែនាំ</button></div></div>`;
+  el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const v = +b.dataset.d; TN.off = v === 0 ? 0 : TN.off + v; renderTonight(); });
+  el.querySelector('[data-share]').onclick = e => share(e.target, head, `🌙 ${head}\n\n${it.r.map(r => vlabel(r) + '\n' + plain(r)).join('\n\n')}\n\n🙏 ${pr}`);
+  el.querySelector('[data-guided]').onclick = () => Guided.open();
 }
 
 const BOPEN = new Set();
@@ -110,6 +137,7 @@ function fromHash({ track: tr = true, scroll = true } = {}) {
   let target = null;
   if (h.startsWith('topic-') && P.topics.some(t => 'topic-' + t.id === h)) { TOPIC = h.slice(6); renderTopic(); target = '#tdetail'; if (tr) track('prayer-topic'); }
   else if (h.startsWith('bible-') && P.bible.some(t => 'bible-' + t.id === h)) { BOPEN.add(h.slice(6)); renderBible(); target = '#' + h; }
+  else if (h === 'tonight') { target = '#tonight'; }
   else if (h === 'guided') { if (tr && $('#guided').hidden) Guided.open(); return; }
   if (target && scroll) { const el = $(target); if (el) setTimeout(() => el.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30); }
 }

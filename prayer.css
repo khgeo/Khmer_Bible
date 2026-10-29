@@ -135,3 +135,12 @@ details summary{cursor:pointer;color:var(--link);font-size:13px}
   #gBody{padding:8px 16px 10px}.gfoot{padding:10px 16px 14px}.gprog{padding:14px 44px 4px 16px}
   .gmodal{padding:0;align-items:flex-end}.gbox{border-radius:16px 16px 0 0;max-height:92vh}
 }
+
+/* tonight: pray the Scriptures */
+.tn{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:linear-gradient(160deg,var(--vsel),transparent 70%)}
+.tn-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.tn-nav button{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:8px;min-width:34px;height:32px;font:inherit;cursor:pointer}
+.tn-nav .tn-today{padding:0 10px}
+.tn-nav small{margin-left:auto;color:var(--muted)}
+.tn h3{margin:8px 0 6px;font-size:17px}
+.tn-pr{font:15.5px/2 var(--verse);margin:12px 0 4px;padding:10px 12px;border-radius:10px;background:var(--vsel)}
