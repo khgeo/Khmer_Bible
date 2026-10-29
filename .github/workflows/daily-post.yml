@@ -4,8 +4,11 @@
 name: Daily verse & devotional
 
 on:
-  schedule:
-    - cron: "47 22 * * *"   # 05:47 in Cambodia (UTC+7); GitHub often starts a few minutes late → about 6 am
+  schedule:                  # times are UTC — Cambodia is UTC+7; GitHub often starts a few minutes late
+    - cron: "47 22 * * *"   # morning  ~6:00  verse of the day + devotional
+    - cron: "47 4 * * *"    # noon     ~12:00 question of the day (Q&A)
+    - cron: "47 11 * * *"   # evening  ~19:00 prayer of the day
+    # delete a line above to stop that post
   workflow_dispatch:
     inputs:
       dry_run:
@@ -15,13 +18,20 @@ on:
       date:
         description: "Date to post, YYYY-MM-DD (empty = today in Cambodia)"
         required: false
+      slot:
+        description: "Which post"
+        type: choice
+        options: [morning, noon, evening]
+        default: morning
       only:
         description: "Post to one channel only"
         type: choice
         options: [both, telegram, facebook]
         default: both
 
-concurrency: daily-post   # never two runs at once
+concurrency:
+  group: daily-post   # never two runs at once
+  cancel-in-progress: false
 
 jobs:
   post:
@@ -50,12 +60,17 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL || 'https://khgeo.github.io/Khmer_Bible/' }}
         run: |
           ARGS="--bible KhmerBFBSBible.xml --out daily_card.png"
+          case "${{ github.event.schedule }}" in
+            "47 4 * * *")  ARGS="$ARGS --slot noon" ;;
+            "47 11 * * *") ARGS="$ARGS --slot evening" ;;
+          esac
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             [ "${{ inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
             [ -n "${{ inputs.date }}" ] && ARGS="$ARGS --date ${{ inputs.date }}"
             [ "${{ inputs.only }}" != "both" ] && ARGS="$ARGS --only ${{ inputs.only }}"
+            ARGS="$ARGS --slot ${{ inputs.slot }}"
           fi
-          python scripts/daily_post.py $ARGS
+          python -u scripts/daily_post.py $ARGS
       - name: Keep the picture
         if: always()
         uses: actions/upload-artifact@v4
