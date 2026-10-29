@@ -1,47 +1,94 @@
-# Posts the verse of the day + daily devotional to Telegram and/or a Facebook Page, every morning.
+# Posts to Telegram and/or a Facebook Page three times a day:
+#   morning = verse of the day + devotional · noon = question of the day · evening = prayer of the day
 # Setup: README → "Daily posts to Telegram / Facebook". Secrets used (Settings → Secrets and variables → Actions):
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, FB_PAGE_ID, FB_PAGE_TOKEN   (leave a pair out to skip that channel)
+# Each post goes out only ONCE per day: if a slot was already posted that day (by schedule or by hand),
+# later runs for the same slot and day are skipped — unless you run it by hand with "Post again" ticked.
 name: Daily verse & devotional
 
 on:
-  schedule:
-    - cron: "47 22 * * *"   # 05:47 in Cambodia (UTC+7); GitHub often starts a few minutes late → about 6 am
+  schedule:                  # times are UTC — Cambodia is UTC+7; GitHub can start late (sometimes much later)
+    - cron: "47 22 * * *"   # morning  ~6:00  verse of the day + devotional
+    - cron: "47 4 * * *"    # noon     ~12:00 question of the day (Q&A)
+    - cron: "47 11 * * *"   # evening  ~19:00 prayer of the day
+    # delete a line above to stop that post
   workflow_dispatch:
     inputs:
       dry_run:
         description: "Preview only (don't post)"
         type: boolean
         default: true
-      date:
-        description: "Date to post, YYYY-MM-DD (empty = today in Cambodia)"
-        required: false
+      slot:
+        description: "Which post"
+        type: choice
+        options: [morning, noon, evening]
+        default: morning
       only:
         description: "Post to one channel only"
         type: choice
         options: [both, telegram, facebook]
         default: both
+      date:
+        description: "Date to post, YYYY-MM-DD (empty = today in Cambodia)"
+        required: false
+      force:
+        description: "Post again even if this slot was already posted that day"
+        type: boolean
+        default: false
 
-concurrency: daily-post   # never two runs at once
+concurrency:
+  group: daily-post   # never two runs at once
+  cancel-in-progress: false
 
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
+      - name: Which post, which day
+        id: plan
+        run: |
+          SLOT=morning
+          case "${{ github.event.schedule }}" in
+            "47 4 * * *")  SLOT=noon ;;
+            "47 11 * * *") SLOT=evening ;;
+          esac
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SLOT="${{ inputs.slot }}"; fi
+          DAY="${{ inputs.date }}"; [ -z "$DAY" ] && DAY=$(TZ=Asia/Phnom_Penh date +%F)
+          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"; echo "day=$DAY" >> "$GITHUB_OUTPUT"
+          echo "Post: $SLOT for $DAY"
+
+      - name: Already posted today?
+        id: done
+        uses: actions/cache/restore@v4
+        with:
+          path: .posted
+          key: posted-${{ steps.plan.outputs.slot }}-${{ steps.plan.outputs.day }}
+
+      - name: Skip (already posted)
+        if: steps.done.outputs.cache-hit == 'true' && !inputs.force && !inputs.dry_run
+        run: echo "The ${{ steps.plan.outputs.slot }} post for ${{ steps.plan.outputs.day }} was already sent — skipping, so the Page gets no duplicate. (Run by hand with 'Post again' ticked to send it anyway.)"
+
       - uses: actions/checkout@v4
+        if: steps.done.outputs.cache-hit != 'true' || inputs.force || inputs.dry_run
       - uses: actions/setup-python@v5
+        if: steps.done.outputs.cache-hit != 'true' || inputs.force || inputs.dry_run
         with:
           python-version: "3.12"
       - name: Install Pillow + Khmer text shaping
+        if: steps.done.outputs.cache-hit != 'true' || inputs.force || inputs.dry_run
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq libraqm0
           pip install --quiet pillow
           python -c "from PIL import features; assert features.check('raqm'), 'libraqm missing'"
       - name: Download the ពគប text
+        if: steps.done.outputs.cache-hit != 'true' || inputs.force || inputs.dry_run
         run: |
           curl -fsSL --retry 3 -o KhmerBFBSBible.xml https://cdn.jsdelivr.net/gh/Beblia/Holy-Bible-XML-Format@master/KhmerBFBSBible.xml \
           || curl -fsSL --retry 3 -o KhmerBFBSBible.xml https://raw.githubusercontent.com/Beblia/Holy-Bible-XML-Format/master/KhmerBFBSBible.xml
       - name: Post
+        id: post
+        if: steps.done.outputs.cache-hit != 'true' || inputs.force || inputs.dry_run
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -49,15 +96,24 @@ jobs:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           SITE_URL: ${{ vars.SITE_URL || 'https://khgeo.github.io/Khmer_Bible/' }}
         run: |
-          ARGS="--bible KhmerBFBSBible.xml --out daily_card.png"
+          ARGS="--bible KhmerBFBSBible.xml --out daily_card.png --slot ${{ steps.plan.outputs.slot }} --date ${{ steps.plan.outputs.day }}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             [ "${{ inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
-            [ -n "${{ inputs.date }}" ] && ARGS="$ARGS --date ${{ inputs.date }}"
             [ "${{ inputs.only }}" != "both" ] && ARGS="$ARGS --only ${{ inputs.only }}"
           fi
-          python scripts/daily_post.py $ARGS
+          python -u scripts/daily_post.py $ARGS
+
+      - name: Remember that this post was sent
+        if: steps.post.outcome == 'success' && !inputs.dry_run && steps.done.outputs.cache-hit != 'true'
+        run: mkdir -p .posted && date -u > .posted/sent.txt
+      - uses: actions/cache/save@v4
+        if: steps.post.outcome == 'success' && !inputs.dry_run && steps.done.outputs.cache-hit != 'true'
+        with:
+          path: .posted
+          key: posted-${{ steps.plan.outputs.slot }}-${{ steps.plan.outputs.day }}
+
       - name: Keep the picture
-        if: always()
+        if: steps.post.outcome == 'success' || steps.post.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: daily-card
