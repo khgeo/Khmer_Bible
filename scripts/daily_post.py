@@ -7,6 +7,7 @@ cycle as today.js, same evening plan as prayer.html), takes the verse text from 
   morning  verse of the day (about 5 years of different verses) + the devotional
   noon     question of the day (data/qa.json)
   evening  pray the Scriptures: a short passage + a prayer prompt (data/evening.json, about 6 years)
+  study    daily Bible study: one lesson a day, book by book (data/study.json — the same lesson as study.html)
 
 
   Telegram:  the card (caption = the verse) and then the devotional as a text message
@@ -69,20 +70,30 @@ def pick(d, devos, votd):
     return vref, dv
 
 
+REF = re.compile(r"([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)(?:-(?:(\d+)\.)?(\d+))?")   # Book.C.V, Book.C.V-V2 or Book.C.V-C2.V2
+
+
 def label(meta, ref):
-    m = re.fullmatch(r"([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)(?:-(\d+))?", ref)
+    m = REF.fullmatch(ref)
     b = next(x for x in meta["books"] if x["osis"] == m.group(1))
-    return f"{b['km']} {km(m.group(2))}:{km(m.group(3))}" + (f"–{km(m.group(4))}" if m.group(4) else "")
+    end = (f"{km(m.group(4))}:" if m.group(4) and m.group(4) != m.group(2) else "") + km(m.group(5)) if m.group(5) else ""
+    return f"{b['km']} {km(m.group(2))}:{km(m.group(3))}" + (f"–{end}" if end else "")
 
 
 def clean(t):  # drop the psalm "Selah" mark and the end-of-book sign for posting
     return re.sub(r"\s*[–-]?\s*បង្អង់\s*$", "", t.replace(":៚", "").replace("៕", "។")).strip()
 
 
-def verse(text, ref, numbered=False):
-    m = re.fullmatch(r"([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)(?:-(\d+))?", ref)
-    b, c, v = m.group(1), int(m.group(2)), int(m.group(3)); v2 = int(m.group(4) or v)
-    return " ".join((f"{km(x)} " if numbered else "") + clean(text[(b, c, x)]) for x in range(v, v2 + 1) if (b, c, x) in text)
+def verse(text, ref, numbered=False, meta=None):
+    m = REF.fullmatch(ref)
+    b, c, v = m.group(1), int(m.group(2)), int(m.group(3))
+    c2, v2 = int(m.group(4) or c), int(m.group(5) or v)
+    out = []
+    for ch in range(c, c2 + 1):
+        if ch > c and numbered and meta: out.append(f"\n[{next(x for x in meta['books'] if x['osis'] == b)['km']} {km(ch)}]\n")
+        last = v2 if ch == c2 else max(x for (bb, cc, x) in text if bb == b and cc == ch)
+        out += [(f"{km(x)} " if numbered else "") + clean(text[(b, ch, x)]) for x in range(v if ch == c else 1, last + 1) if (b, ch, x) in text]
+    return " ".join(out).replace(" \n", "\n").replace("\n ", "\n")
 
 
 # ---------- the verse card ----------
@@ -92,6 +103,8 @@ THEMES = {
                 "muted": "#6b6f78", "rule": "#dfd3b4", "link": "#1b5fb8"},
     "noon":    {"top": (244, 250, 252), "bot": (203, 233, 238), "accent": "#0f6b78", "bar": "#7cc4cc", "text": "#13262b",
                 "muted": "#55707a", "rule": "#b5d8de", "link": "#0f5fa8"},
+    "study":   {"top": (251, 249, 241), "bot": (234, 239, 224), "accent": "#2f6b3a", "bar": "#9cc79a", "text": "#1d241c",
+                "muted": "#5d6b5b", "rule": "#cfd8c4", "link": "#1f5f9e"},
     "evening": {"top": (14, 24, 56), "bot": (40, 46, 96), "accent": "#e9c46a", "bar": "#b99a4a", "text": "#f4efe2",
                 "muted": "#aab3cf", "rule": "#3c4780", "link": "#9cc3ff"},
 }
@@ -121,6 +134,15 @@ def backdrop(img, style, F):
         q = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         ImageDraw.Draw(q).text((W - 400, H - 1010), "?", font=F("Bold", 700), fill=(15, 107, 120, 26))
         glow = Image.alpha_composite(glow, q)
+    elif style == "study":      # a page of a notebook: ruled lines, a margin line and an open book
+        for y in range(330, H - 170, 62): g.line([(0, y), (W, y)], fill=(120, 150, 110, 38), width=2)
+        g.line([(38, 0), (38, H)], fill=(200, 90, 80, 60), width=3)
+        bx, by = W - 250, 92                       # open book: two pages and a spine
+        g.polygon([(bx, by + 20), (bx + 75, by), (bx + 75, by + 100), (bx, by + 120)], fill=(47, 107, 58, 46))
+        g.polygon([(bx + 80, by), (bx + 155, by + 20), (bx + 155, by + 120), (bx + 80, by + 100)], fill=(47, 107, 58, 46))
+        for k in range(4):
+            g.line([(bx + 10, by + 38 + k * 18), (bx + 65, by + 25 + k * 18)], fill=(47, 107, 58, 90), width=3)
+            g.line([(bx + 90, by + 25 + k * 18), (bx + 145, by + 38 + k * 18)], fill=(47, 107, 58, 90), width=3)
     else:                        # stars (same pattern each day) and a crescent moon
         rnd = random.Random(1954)
         for _ in range(140):
@@ -147,10 +169,11 @@ def card(path, vtext, vlabel, dlabel, site, title="ខគម្ពីរប្�
     d.rectangle([M, 150, M + 90, 156], fill=T["accent"])
     # Battambang lacks a few punctuation glyphs; use plain ones on the picture
     fix = lambda t: t.replace("–", "-").replace("—", "-").replace("·", "-")
-    vtext, vlabel, title = fix(vtext), fix(vlabel), fix(title)
-    ts = next(z for z in (40, 36, 32, 29, 26) if d.textlength(title, font=F("Bold", z)) <= W - 2 * M or z == 26)
+    vtext, vlabel, title, dlabel = fix(vtext), fix(vlabel), fix(title), fix(dlabel)
+    ts = next(z for z in (40, 36, 32, 29, 26, 23, 21) if d.textlength(title, font=F("Bold", z)) <= W - 2 * M or z == 21)
     d.text((M, 175 + (40 - ts) // 2), title, font=F("Bold", ts), fill=T["accent"])
-    d.text((M, 232), dlabel, font=F("Regular", 30), fill=T["muted"])
+    ds = next(z for z in (30, 27, 24, 22) if d.textlength(dlabel, font=F("Regular", z)) <= W - 2 * M or z == 22)
+    d.text((M, 232 + (30 - ds) // 2), dlabel, font=F("Regular", ds), fill=T["muted"])
     # words in ពគប are separated by zero-width spaces, so wrap on those and on spaces
     def clusters(w):   # split a long Khmer run into letter clusters (a consonant + its marks / subscripts)
         out = []
@@ -259,6 +282,35 @@ def evening_post(d, meta, text, site, dlabel):
             "tag": f"evening#{n % len(ev['items']) + 1}/{len(ev['items'])} {plabel}"}
 
 
+def study_post(d, meta, text, site, dlabel):
+    """Daily Bible study: one lesson a day from data/study.json (the same lesson as study.html)."""
+    st = json.load(open(os.path.join(ROOT, "data", "study.json"), encoding="utf-8"))
+    n = (d - dt.date.fromisoformat(st["start"])).days
+    if n < 0: return None
+    flat = [(s, k, L) for s in st["series"] for k, L in enumerate(s["lessons"])]
+    s, k, L = flat[n % len(flat)]
+    N, lab, mvl = len(s["lessons"]), label(meta, L["r"]), label(meta, L["mv"])
+    head = f"មេរៀនទី {km(k + 1)}/{km(N)}"
+    caption = (f"📚 សិក្សាព្រះបន្ទូលប្រចាំថ្ងៃ · {s['t']} · {head}\n{L['t']}\n\n📖 អាន៖ {lab}\n\n"
+               f"📌 ខទន្ទេញ\n«{verse(text, L['mv'])}»\n— {mvl}")
+    qn, qs = 0, []
+    for key, h in (("o", "🔍 សង្កេត"), ("i", "🧠 បកស្រាយ"), ("a", "🌱 អនុវត្ត")):
+        lines = []
+        for q in L[key]: qn += 1; lines.append(f"{km(qn)}. {q}")
+        qs.append(h + "\n" + "\n".join(lines))
+    body = "\n\n".join([
+        f"🧭 ផ្ទៃរឿង\n{L['bg']}",
+        f"📖 {lab}\n{verse(text, L['r'], numbered=True, meta=meta)}",
+        "💡 ការពន្យល់\n" + "\n\n".join(f"▪️ ខ {v} · {h}\n{t}" for v, h, t in L["n"]),
+        "🔑 ពាក្យគន្លឹះ\n" + "\n".join(f"• {w} — {x}" for w, x in L["w"]),
+        "❓ សំណួរសិក្សា\n" + "\n\n".join(qs),
+        "👥 សំរាប់ក្រុមតូច\n" + "\n".join(f"• {q}" for q in L["g"]),
+        f"🙏 អធិស្ឋាន\n{L['p']}",
+        f"✍️ ចែកចាយចម្លើយ ឬអ្វីដែលអ្នកបានរៀន នៅក្នុង comment។\nមេរៀនពេញ កន្លែងសរសេរចម្លើយ និងក្រដាសបោះពុម្ពសំរាប់ក្រុម៖ {site}study.html#{L['id']}"])
+    return {"card": (verse(text, L["mv"]), mvl, L["t"]), "dlabel": f"សិក្សាព្រះបន្ទូល · {head} · {lab}",
+            "caption": caption, "body": body, "tag": f"study {L['id']} {lab}", "link": f"study.html#{L['id']}"}
+
+
 # ---------- senders ----------
 def http(url, fields=None, files=None):
     """POST form fields (and optional files) and return parsed JSON."""
@@ -279,13 +331,13 @@ def http(url, fields=None, files=None):
         raise RuntimeError(f"{e.code} {e.read().decode(errors='replace')[:500]}")
 
 
-def telegram(token, chat, img, verse_msg, devo_msg, site):
+def telegram(token, chat, img, verse_msg, devo_msg, site, link="today.html"):
     api = f"https://api.telegram.org/bot{token}"
     cap = verse_msg if len(verse_msg) <= 1024 else verse_msg[:1000] + "…"
     r = http(f"{api}/sendPhoto", {"chat_id": chat, "caption": cap}, {"photo": img})
     print("telegram photo:", r.get("ok"), r.get("description", ""))
     if devo_msg:
-        kb = json.dumps({"inline_keyboard": [[{"text": "📖 អាននៅលើគេហទំព័រ", "url": site + "today.html"}]]})
+        kb = json.dumps({"inline_keyboard": [[{"text": "📖 អាននៅលើគេហទំព័រ", "url": site + link}]]})
         for i, chunk in enumerate(split(devo_msg, 4000)):
             r = http(f"{api}/sendMessage", {"chat_id": chat, "text": chunk, "disable_web_page_preview": "true",
                                              **({"reply_markup": kb} if i == len(split(devo_msg, 4000)) - 1 else {})})
@@ -313,20 +365,25 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="only print the messages and save the card")
     ap.add_argument("--out", default="daily_card.png")
     ap.add_argument("--only", choices=["telegram", "facebook"], help="post to one channel only")
-    ap.add_argument("--slot", choices=["morning", "noon", "evening"], default="morning", help="morning = verse + devotional, noon = question of the day, evening = prayer")
+    ap.add_argument("--slot", choices=["morning", "noon", "evening", "study"], default="morning",
+                    help="morning = verse + devotional, noon = question of the day, evening = prayer, study = daily Bible study lesson")
     a = ap.parse_args()
     site = os.environ.get("SITE_URL", "https://khgeo.github.io/Khmer_Bible/").rstrip("/") + "/"
     d = dt.date.fromisoformat(a.date) if a.date else dt.datetime.now(TZ).date()
     meta, devos, votd, text = load_data(a.bible)
     vref, dv = pick(d, devos, votd)
     dlabel, vt, vl, verse_msg, devo_msg = messages(d, meta, text, vref, dv, site)
+    link = "today.html"
     if a.slot == "morning":
         card(a.out, vt, vl, dlabel, site)
         print(f"== {d} · morning · verse {vref} · devotional {dv and dv['id']} · card {a.out}\n")
     else:
-        P = (noon_post if a.slot == "noon" else evening_post)(d, meta, text, site, dlabel)
+        P = {"noon": noon_post, "evening": evening_post, "study": study_post}[a.slot](d, meta, text, site, dlabel)
+        if P is None:
+            print(f"== {d} · {a.slot} · nothing to post today (the study plan has not started yet)"); return
         ctext, clabel, ctitle = P["card"]
-        card(a.out, ctext, clabel, dlabel, site, title=ctitle, style=a.slot)
+        card(a.out, ctext, clabel, P.get("dlabel", dlabel), site, title=ctitle, style=a.slot)
+        link = P.get("link") or {"noon": "qa.html", "evening": "prayer.html#tonight"}.get(a.slot, "today.html")
         verse_msg, devo_msg = P["caption"], P["body"]
         print(f"== {d} · {a.slot} · {P['tag']} · card {a.out}\n")
     print(verse_msg, "\n\n----------\n\n", devo_msg or "(no devotional)", sep="")
@@ -336,7 +393,7 @@ def main():
     fb_p, fb_t = os.environ.get("FB_PAGE_ID"), os.environ.get("FB_PAGE_TOKEN")
     if a.only != "facebook":
         if tg_t and tg_c:
-            try: telegram(tg_t, tg_c, a.out, verse_msg, devo_msg, site); sent += 1
+            try: telegram(tg_t, tg_c, a.out, verse_msg, devo_msg, site, link); sent += 1
             except Exception as e: failed.append(f"Telegram: {e}")
         else: print("Telegram: not configured, skipped")
     if a.only != "telegram":
