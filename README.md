@@ -35,6 +35,13 @@ An interactive arc diagram of **341,167 Bible cross-references**, linked live to
 - **Highlights & notes:** tap any verse in the reader to colour it (yellow, green, blue, pink), write a note, copy it or share a link. All highlights are listed on this page, filterable by colour or notes.
 - Journal, devotionals read, highlights and plan are included in the reading-data backup file.
 
+## Bible study (`study.html`)
+A daily Bible study lesson — one lesson a day, book by book — for personal study and small groups. It starts with **the Gospel of Mark in 45 lessons** (lesson 1 on Monday 16 November 2026; the same lesson is posted at ~15:00).
+- Each lesson: background, the full passage from ពគប, verse-by-verse notes, key words, **observe / interpret / apply** questions with a box to write answers (kept only in this browser), small-group questions, a memory verse (with a *hide words* button to practise), related verses and a prayer.
+- ‹ › to move between lessons, a list of all lessons with ticks for the ones you finished, and a **Print** button that makes a clean handout for a group (with lines to write on).
+- *How to study* and *Leading a small group* (a 50-minute plan) sections. Links: `study.html#mk01` … `study.html#mk45`.
+- Lessons are written in `scripts/study_mark.py`; `scripts/build_study.py --bible KhmerBFBSBible.xml` checks every reference against ពគប and builds `data/study.json`. To add the next book, write `scripts/study_<book>.py` the same way and add it to `BOOKS` in `build_study.py` — it continues after Mark (until then the plan starts again).
+
 ## Questions & answers (`qa.html`)
 - **299 questions** in 18 categories — the Bible, God, Jesus, the Holy Spirit, salvation, prayer, Christian life, sin, family, work & money, suffering, the church, death & eternity, angels, the last days, people & events, **faith & Khmer culture** (ancestors, family ceremonies, amulets, lucky days, Khmer New Year…), and **Bible facts**.
 - Each answer is a short summary; **the verses themselves are the answer** — every cited passage (1,000+ references) is shown in full, loaded live from ពគប, with links to read it or see its arcs.
@@ -101,12 +108,13 @@ A service worker (`sw.js`) keeps a copy of every page you open, so the site open
 
 ## Daily posts to Telegram / Facebook
 
-Three times a day a GitHub Action (`.github/workflows/daily-post.yml`) posts **exactly what the website shows that day**:
+Four times a day a GitHub Action (`.github/workflows/daily-post.yml`) posts **exactly what the website shows that day**:
 
 | Time | Post | Different posts before anything repeats |
 |---|---|---|
 | ~6:00 | verse of the day + devotional | verse: **~5 years** (1,945 verses) · devotional: 60 days (+ 4 special days) |
 | ~12:00 | question of the day (Q&A + its verses) | 255 days |
+| ~15:00 | Bible study lesson — passage, notes, questions, memory verse (`study.html`) | 45 days (Mark), more books to come |
 | ~19:00 | pray the Scriptures — a short passage + a prayer prompt (`prayer.html#tonight`) | **~6 years** (2,203 evenings) |
 
 The evening plan (`data/evening.json`, built by `scripts/build_evening.py`) walks through **all the Psalms** (short parts; Psalm 119 in half-stanzas), **the New Testament** (about 5 verses a night, in a reading order that starts with John) and the **Old Testament prayers** from the Prayer page, with 14 rotating prompts (praise, thanks, confession, praying for others, Cambodia, …). About one evening in four is a Psalm, so the Psalms last the whole plan.
@@ -138,6 +146,10 @@ It runs on GitHub's servers for free; your computer doesn't need to be on. Set u
 
 **Test it:** **Actions → Daily verse & devotional → Run workflow**. With *Preview only* ticked it posts nothing — open the run to read the messages and download the picture (artifact *daily-card*). Untick it to post for real. You can also preview any date (e.g. `2026-12-25`) or post to one channel only.
 
+Each slot has its own picture style: morning = warm sunrise, noon = light blue with a “?”, study = a green notebook page, evening = night sky with moon and stars.
+
+**On time every day:** GitHub often starts scheduled runs late (sometimes hours) or skips them. For posts on the minute, use a free outside timer such as [cron-job.org](https://cron-job.org) to start the workflow: one job per slot, `POST https://api.github.com/repos/<owner>/<repo>/actions/workflows/daily-post.yml/dispatches`, headers `Authorization: Bearer <fine-grained token with Actions: read and write on this repository>` and `Accept: application/vnd.github+json`, body `{"ref":"main","inputs":{"slot":"study","dry_run":"false"}}` (slot = `morning`, `noon`, `study` or `evening`), time zone Asia/Phnom_Penh. Keep the GitHub schedule as a backup — the once-a-day check stops double posts.
+
 Each post goes out only **once per day**: if GitHub starts a scheduled run late, or you already posted that slot by hand, the extra run is skipped (tick *Post again* in **Run workflow** to force it). Notes: each post has its own `cron:` line in `.github/workflows/daily-post.yml` — delete a line to stop that post, or change the time (it is in UTC: Cambodia = UTC+7). GitHub turns scheduled workflows off after 60 days without any commit to the repository — you'll get an email; click *Enable workflow* (or make any small commit). Keep tokens only in GitHub secrets, never in files. Each post credits ព្រះគម្ពីរបរិសុទ្ធ ១៩៥៤ (ពគប) and links back to the site; the ពគប text is © BFBS/UBS 1954, 1962, so check with the Bible Society of Cambodia if you plan large-scale or commercial use.
 
 ## “Live connection” to ពគប
@@ -168,6 +180,8 @@ python3 scripts/build_places.py --geo Bible-Geocoding-Data --bible KhmerBFBSBibl
 python3 scripts/build_qa.py --bible KhmerBFBSBible.xml
 python3 scripts/build_prayer.py
 python3 scripts/build_devos.py
+python3 scripts/build_evening.py --bible KhmerBFBSBible.xml
+python3 scripts/build_study.py --bible KhmerBFBSBible.xml
 ```
 The XML is used only for chapter/verse structure. References with zero or negative votes are dropped; 218 that point outside the Khmer versification are skipped.
 
@@ -185,6 +199,7 @@ The XML is used only for chapter/verse structure. References with zero or negati
 | `data/prayers.json` | Built prayer data (from `scripts/prayer_source.py`) |
 | `data/devotionals.json` | Built devotionals (from `scripts/devo_source.py`) |
 | `data/evening.json`, `scripts/build_evening.py` | Evening “pray the Scriptures” plan (~6 years) |
+| `study.html`, `study.js`, `study.css`, `data/study.json`, `scripts/study_mark.py`, `scripts/build_study.py` | Daily Bible study lessons (Mark, 45 lessons) |
 | `sw.js`, `manifest.json`, `assets/icon-*.png` | Offline copy of the site, install to home screen |
 | `music.html`, `music.js`, `music.css`, `music/`, `scripts/build_playlist.py`, `.github/workflows/music-playlist.yml` | Music player and playlists |
 | `.github/workflows/daily-post.yml`, `scripts/daily_post.py`, `scripts/fb_page_token.py` | Daily Telegram / Facebook posts |

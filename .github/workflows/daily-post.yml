@@ -1,5 +1,5 @@
-# Posts to Telegram and/or a Facebook Page three times a day:
-#   morning = verse of the day + devotional · noon = question of the day · evening = prayer of the day
+# Posts to Telegram and/or a Facebook Page four times a day:
+#   morning = verse of the day + devotional · noon = question of the day · study = Bible study lesson · evening = prayer of the day
 # Setup: README → "Daily posts to Telegram / Facebook". Secrets used (Settings → Secrets and variables → Actions):
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, FB_PAGE_ID, FB_PAGE_TOKEN   (leave a pair out to skip that channel)
 # Each post goes out only ONCE per day: if a slot was already posted that day (by schedule or by hand),
@@ -10,6 +10,7 @@ on:
   schedule:                  # times are UTC — Cambodia is UTC+7; GitHub can start late (sometimes much later)
     - cron: "47 22 * * *"   # morning  ~6:00  verse of the day + devotional
     - cron: "47 4 * * *"    # noon     ~12:00 question of the day (Q&A)
+    - cron: "47 7 * * *"    # study    ~15:00 daily Bible study lesson
     - cron: "47 11 * * *"   # evening  ~19:00 prayer of the day
     # delete a line above to stop that post
   workflow_dispatch:
@@ -21,7 +22,7 @@ on:
       slot:
         description: "Which post"
         type: choice
-        options: [morning, noon, evening]
+        options: [morning, noon, evening, study]
         default: morning
       only:
         description: "Post to one channel only"
@@ -51,6 +52,7 @@ jobs:
           SLOT=morning
           case "${{ github.event.schedule }}" in
             "47 4 * * *")  SLOT=noon ;;
+            "47 7 * * *")  SLOT=study ;;
             "47 11 * * *") SLOT=evening ;;
           esac
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SLOT="${{ inputs.slot }}"; fi
